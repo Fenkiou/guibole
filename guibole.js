@@ -12,7 +12,7 @@ define([
       this.deck = null;
       this.drawed_cards = null;
 
-      this.cardwidth = 72;
+      this.cardwidth = 70;
       this.cardheight = 96;
     },
 
@@ -64,7 +64,8 @@ define([
 
       // Create cards types:
       for (var color = 1; color <= 4; color++) {
-        for (var value = 2; value <= 14; value++) {
+        // K, Q, J, 10, ..., 2, A
+        for (var value = 13; value >= 1; value--) {
           // Build card type id
           var card_type_id = this.getCardUniqueId(color, value);
 

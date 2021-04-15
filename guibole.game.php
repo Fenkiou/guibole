@@ -51,7 +51,8 @@ class Guibole extends Table
     $cards = array();
     foreach ($this->colors as $color_id => $color) // spade, heart, diamond, club
     {
-      for ($value = 2; $value <= 14; $value++)   //  2, 3, 4, ... K, A
+      //  K, Q, J, 10, ..., 2, A
+      for ($value = 13; $value >= 1; $value--)
       {
         $cards[] = array('type' => $color_id, 'type_arg' => $value, 'nbr' => 1);
       }
