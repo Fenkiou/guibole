@@ -7,16 +7,16 @@ define([
 ], function (dojo, declare) {
   return declare("bgagame.guibole", ebg.core.gamegui, {
     constructor: function () {
-      console.log("guibole constructor");
-
       this.playerHand = null;
+      this.discard = null;
+      this.deck = null;
+      this.drawed_cards = null;
+
       this.cardwidth = 72;
       this.cardheight = 96;
     },
 
     setup: function (gamedatas) {
-      console.log("Starting game setup");
-
       this.playerHand = new ebg.stock();
       this.playerHand.create(
         this,
@@ -25,14 +25,17 @@ define([
         this.cardheight
       );
       this.playerHand.image_items_per_row = 13;
+      this.playerHand.centerItems = true;
 
       this.deck = new ebg.stock();
       this.deck.create(this, $("deck"), this.cardwidth, this.cardheight);
       this.deck.image_items_per_row = 1;
+      this.deck.centerItems = true;
 
       this.discard = new ebg.stock();
       this.discard.create(this, $("discard"), this.cardwidth, this.cardheight);
       this.discard.image_items_per_row = 13;
+      this.discard.centerItems = true;
 
       this.drawed_cards = new ebg.stock();
       this.drawed_cards.create(
@@ -42,6 +45,7 @@ define([
         this.cardheight
       );
       this.drawed_cards.image_items_per_row = 13;
+      this.drawed_cards.centerItems = true;
 
       dojo.connect(
         this.playerHand,
@@ -135,13 +139,9 @@ define([
       this.drawed_cards.setSelectionMode(0);
 
       this.setupNotifications();
-
-      console.log("Ending game setup");
     },
 
     onEnteringState: function (stateName, args) {
-      console.log("Entering state: " + stateName);
-
       switch (stateName) {
         case "playerTurn":
           this.addTooltip("player_hand", _("Cards in my hand"), "");
@@ -153,8 +153,6 @@ define([
     },
 
     onLeavingState: function (stateName) {
-      console.log("Leaving state: " + stateName);
-
       switch (stateName) {
         case "dummmy":
           break;
@@ -162,8 +160,6 @@ define([
     },
 
     onUpdateActionButtons: function (stateName, args) {
-      console.log("onUpdateActionButtons: " + stateName);
-
       if (this.isCurrentPlayerActive()) {
         switch (stateName) {
           case "playerTurn":
@@ -186,8 +182,6 @@ define([
     },
 
     setupNotifications: function () {
-      console.log("notifications subscriptions setup");
-
       dojo.subscribe("newHand", this, "newHand");
       dojo.subscribe("discardedCards", this, "discardedCards");
       dojo.subscribe("drawedCards", this, "drawedCards");
@@ -349,7 +343,6 @@ define([
         return;
       }
 
-      console.log("showCards");
       this.ajaxcall(
         "/guibole/guibole/showCards.html",
         {},

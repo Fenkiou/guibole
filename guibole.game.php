@@ -5,6 +5,11 @@ require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 
 class Guibole extends Table
 {
+  const DECK = 'deck';
+  const HAND = 'hand';
+  const DISCARD = 'discard';
+  const DRAWED_CARDS = 'drawed_cards';
+
   function __construct()
   {
     parent::__construct();
@@ -52,77 +57,78 @@ class Guibole extends Table
       }
     }
 
-    $this->cards->createCards($cards, 'deck');
+    $this->cards->createCards($cards, self::DECK);
 
     // Activate first player (which is in general a good idea :) )
     $this->activeNextPlayer();
     /************ End of the game initialization *****/
   }
 
-  protected function getDrawedCards()
+  function getDrawedCards()
   {
-    return $this->cards->getCardsInLocation('drawed_cards');
+    return $this->cards->getCardsInLocation(self::DRAWED_CARDS);
   }
 
-  protected function setDrawedCards($cards)
+  function setDrawedCards($cards)
   {
-    $this->cards->moveCards(self::getCardIds($cards), 'drawed_cards');
-    //
+    $this->cards->moveCards(self::getCardIds($cards), self::DRAWED_CARDS);
+
     // Notify all other players about the discarded cards
     self::notifyAllPlayers('drawedCards', '', array(
       'cards' => $cards
     ));
   }
 
-  protected function getDiscardedCards()
+  function getDiscardedCards()
   {
-    return $this->cards->getCardsInLocation('drawed_cards');
+    return $this->cards->getCardsInLocation(self::DISCARD);
   }
 
-  protected function setDiscardedCards($cards)
+  function setDiscardedCards($cards)
   {
-    $this->cards->moveCards(self::getCardIds($cards), 'discard');
+    self::dump("setDiscardedCards", $cards);
+    $this->cards->moveCards(self::getCardIds($cards), self::DISCARD);
 
     self::notifyAllPlayers('discardedCards', '', array(
       'cards' => $cards
     ));
   }
 
-  protected function getFirstCardInDeck()
+  function getFirstCardInDeck()
   {
-    return $this->cards->getCardOnTop('deck');
+    return $this->cards->getCardOnTop(self::DECK);
   }
 
-  protected function getCards($card_ids)
+  function getCards($card_ids)
   {
     return $this->cards->getCards($card_ids);
   }
 
-  protected function getCardIds($cards)
+  function getCardIds($cards)
   {
     return array_column($cards, 'id');
   }
 
-  protected function currentUserTakeCard($card_id)
+  function currentUserTakeCard($card_id)
   {
     $card = $this->cards->getCard($card_id);
 
     if (!$card)
       throw new feException(self::_("This card does not exists"));
 
-    if ($card['location'] != 'deck' && $card['location'] != 'discard')
+    if ($card['location'] != self::DECK && $card['location'] != self::DISCARD)
       throw new feException(self::_("This card cannot be taken"));
 
     $current_player_id = self::getCurrentPlayerId();
-    $this->cards->moveCard($card_id, 'hand', $current_player_id);
+    $this->cards->moveCard($card_id, self::HAND, $current_player_id);
 
-    if ($card['location'] == 'deck') {
+    if ($card['location'] == self::DECK) {
       self::notifyAllPlayers('setFirstCardInDeck', '', array(
         'card' => self::getFirstCardInDeck()
       ));
     }
 
-    $cards = $this->cards->getCardsInLocation('hand', $current_player_id);
+    $cards = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
     self::notifyPlayer($current_player_id, 'newHand', '', array(
       'cards' => $cards
@@ -147,11 +153,11 @@ class Guibole extends Table
     $sql = "SELECT player_id AS id, player_score AS score FROM player";
     $result['players'] = self::getCollectionFromDb($sql);
 
-    $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
+    $result[self::HAND] = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
     $result['first_card_in_deck'] = self::getFirstCardInDeck();
-    $result['discard'] = self::getDiscardedCards();
-    $result['drawed_cards'] = self::getDrawedCards();
+    $result[self::DISCARD] = self::getDiscardedCards();
+    $result[self::DRAWED_CARDS] = self::getDrawedCards();
 
     $result['state_name'] = $this->gamestate->state()["name"];
 
@@ -160,22 +166,16 @@ class Guibole extends Table
 
   function startRound()
   {
-    $this->cards->moveAllCardsInLocation(null, "deck");
-    $this->cards->shuffle('deck');
+    $this->cards->moveAllCardsInLocation(null, self::DECK);
+    $this->cards->shuffle(self::DECK);
 
     $players = self::loadPlayersBasicInfos();
 
     foreach ($players as $player_id => $player) {
-      $cards = $this->cards->pickCards(5, 'deck', $player_id);
-
-      // Notify player about his cards
-      self::notifyPlayer($player_id, 'newHand', '', array(
-        'cards' => $cards
-      ));
+      $this->cards->pickCards(5, self::DECK, $player_id);
     }
 
-    // TODO FIX ISSUE WITH INITIAL DISCARDED CARDS
-    $cards = array($this->cards->pickCardForLocation('deck', 'discard'));
+    $cards = array($this->cards->pickCardForLocation(self::DECK, self::DISCARD));
     self::setDiscardedCards($cards);
 
     $this->gamestate->nextState("playerTurn");
@@ -191,7 +191,7 @@ class Guibole extends Table
       throw new feException(self::_("Some of these cards don't exist"));
 
     foreach ($cards as $card) {
-      if ($card['location'] != 'hand' || $card['location_arg'] != $current_player_id)
+      if ($card['location'] != self::HAND || $card['location_arg'] != $current_player_id)
         throw new feException(self::_("Some of these cards are not in your hand"));
     }
 
@@ -200,7 +200,7 @@ class Guibole extends Table
 
     self::setDrawedCards($cards);
 
-    $cards = $this->cards->getCardsInLocation('hand', $current_player_id);
+    $cards = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
     // Notify player about his cards
     self::notifyPlayer($current_player_id, 'newHand', '', array(
