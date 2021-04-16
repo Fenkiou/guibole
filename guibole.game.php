@@ -49,7 +49,7 @@ class Guibole extends Table
     /************ Start the game initialization *****/
 
     $cards = array();
-    foreach ($this->colors as $color_id => $color) // spade, heart, diamond, club
+    foreach ($this->colors as $color_id => $color) // diamond, club, heart, spade
     {
       //  K, Q, J, 10, ..., 2, A
       for ($value = 13; $value >= 1; $value--)

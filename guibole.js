@@ -7,25 +7,27 @@ define([
 ], function (dojo, declare) {
   return declare("bgagame.guibole", ebg.core.gamegui, {
     constructor: function () {
-      this.playerHand = null;
+      this.player_hand = null;
       this.discard = null;
       this.deck = null;
       this.drawed_cards = null;
 
       this.cardwidth = 70;
       this.cardheight = 96;
+
+      this.card_value_by_id = {};
     },
 
     setup: function (gamedatas) {
-      this.playerHand = new ebg.stock();
-      this.playerHand.create(
+      this.player_hand = new ebg.stock();
+      this.player_hand.create(
         this,
         $("player_hand"),
         this.cardwidth,
         this.cardheight
       );
-      this.playerHand.image_items_per_row = 13;
-      this.playerHand.centerItems = true;
+      this.player_hand.image_items_per_row = 13;
+      this.player_hand.centerItems = true;
 
       this.deck = new ebg.stock();
       this.deck.create(this, $("deck"), this.cardwidth, this.cardheight);
@@ -48,7 +50,7 @@ define([
       this.drawed_cards.centerItems = true;
 
       dojo.connect(
-        this.playerHand,
+        this.player_hand,
         "onChangeSelection",
         this,
         "playerHandSelectionChanged"
@@ -67,31 +69,31 @@ define([
         // K, Q, J, 10, ..., 2, A
         for (var value = 13; value >= 1; value--) {
           // Build card type id
-          var card_type_id = this.getCardUniqueId(color, value);
+          var card_position = this.getCardPosition(color, value);
 
-          this.playerHand.addItemType(
-            card_type_id,
-            card_type_id,
+          this.player_hand.addItemType(
+            card_position,
+            value,
             g_gamethemeurl + "img/cards.jpg",
-            card_type_id
+            card_position
           );
           this.deck.addItemType(
-            card_type_id,
-            card_type_id,
+            card_position,
+            value,
             g_gamethemeurl + "img/card_back.jpg",
-            card_type_id
+            card_position
           );
           this.discard.addItemType(
-            card_type_id,
-            card_type_id,
+            card_position,
+            value,
             g_gamethemeurl + "img/cards.jpg",
-            card_type_id
+            card_position
           );
           this.drawed_cards.addItemType(
-            card_type_id,
-            card_type_id,
+            card_position,
+            value,
             g_gamethemeurl + "img/cards.jpg",
-            card_type_id
+            card_position
           );
         }
       }
@@ -101,10 +103,12 @@ define([
         var card = this.gamedatas.hand[i];
         var color = card.type;
         var value = card.type_arg;
-        this.playerHand.addToStockWithId(
-          this.getCardUniqueId(color, value),
+        this.player_hand.addToStockWithId(
+          this.getCardPosition(color, value),
           card.id
         );
+
+        this.card_value_by_id[card.id] = value;
       }
 
       for (var i in this.gamedatas.discard) {
@@ -113,7 +117,7 @@ define([
         var value = card.type_arg;
 
         this.discard.addToStockWithId(
-          this.getCardUniqueId(color, value),
+          this.getCardPosition(color, value),
           card.id
         );
       }
@@ -124,7 +128,7 @@ define([
         var value = card.type_arg;
 
         this.drawed_cards.addToStockWithId(
-          this.getCardUniqueId(color, value),
+          this.getCardPosition(color, value),
           card.id
         );
       }
@@ -133,13 +137,17 @@ define([
       var color = card.type;
       var value = card.type_arg;
 
-      this.deck.addToStockWithId(this.getCardUniqueId(color, value), card.id);
+      this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
 
       this.discard.setSelectionMode(1);
       this.deck.setSelectionMode(1);
       this.drawed_cards.setSelectionMode(0);
 
       this.setupNotifications();
+    },
+
+    getCardPosition: function (color, value) {
+      return color * 13 - value;
     },
 
     onEnteringState: function (stateName, args) {
@@ -190,14 +198,14 @@ define([
     },
 
     newHand: function (notification) {
-      this.playerHand.removeAll();
+      this.player_hand.removeAll();
 
       for (var i in notification.args.cards) {
         var card = notification.args.cards[i];
         var color = card.type;
         var value = card.type_arg;
-        this.playerHand.addToStockWithId(
-          this.getCardUniqueId(color, value),
+        this.player_hand.addToStockWithId(
+          this.getCardPosition(color, value),
           card.id
         );
       }
@@ -211,7 +219,7 @@ define([
         var color = card.type;
         var value = card.type_arg;
         this.discard.addToStockWithId(
-          this.getCardUniqueId(color, value),
+          this.getCardPosition(color, value),
           card.id
         );
       }
@@ -225,7 +233,7 @@ define([
         var color = card.type;
         var value = card.type_arg;
         this.drawed_cards.addToStockWithId(
-          this.getCardUniqueId(color, value),
+          this.getCardPosition(color, value),
           card.id
         );
       }
@@ -237,16 +245,14 @@ define([
       var card = notification.args.card;
       var color = card.type;
       var value = card.type_arg;
-      this.deck.addToStockWithId(this.getCardUniqueId(color, value), card.id);
-    },
-
-    getCardUniqueId: function (color, value) {
-      return (color - 1) * 13 + (value - 2);
+      this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
     },
 
     playerHandSelectionChanged: function () {
       // TODO check for wrong selection
       // or prevent wrong selection after first select
+      console.log(this.player_hand.getSelectedItems());
+      console.log(this.card_value_by_id);
     },
     deckSelected: function () {
       /*
@@ -270,7 +276,7 @@ define([
     },
 
     playCards: function () {
-      var cards = this.playerHand.getSelectedItems();
+      var cards = this.player_hand.getSelectedItems();
 
       if (cards.length === 0) {
         this.showMessage(_("You must select at least 1 card"), "error");
@@ -302,7 +308,7 @@ define([
         function (is_error) {}
       );
 
-      this.playerHand.unselectAll();
+      this.player_hand.unselectAll();
       this.deck.unselectAll();
       this.discard.unselectAll();
     },
