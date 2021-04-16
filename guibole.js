@@ -99,39 +99,17 @@ define([
       }
 
       // Cards in player's hand
-      for (var i in this.gamedatas.hand) {
-        var card = this.gamedatas.hand[i];
-        var color = card.type;
-        var value = card.type_arg;
-        this.player_hand.addToStockWithId(
-          this.getCardPosition(color, value),
-          card.id
-        );
+      this.setHand(this.convertCardObjectToCardArray(this.gamedatas.hand));
 
-        this.card_value_by_id[card.id] = value;
-      }
+      // Discarded cards
+      this.setDiscardedCards(
+        this.convertCardObjectToCardArray(this.gamedatas.discard)
+      );
 
-      for (var i in this.gamedatas.discard) {
-        var card = this.gamedatas.discard[i];
-        var color = card.type;
-        var value = card.type_arg;
-
-        this.discard.addToStockWithId(
-          this.getCardPosition(color, value),
-          card.id
-        );
-      }
-
-      for (var i in this.gamedatas.drawed_cards) {
-        var card = this.gamedatas.drawed_cards[i];
-        var color = card.type;
-        var value = card.type_arg;
-
-        this.drawed_cards.addToStockWithId(
-          this.getCardPosition(color, value),
-          card.id
-        );
-      }
+      // Drawed cards
+      this.setDrawedCards(
+        this.convertCardObjectToCardArray(this.gamedatas.drawed_cards)
+      );
 
       var card = this.gamedatas.first_card_in_deck;
       var color = card.type;
@@ -139,8 +117,6 @@ define([
 
       this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
 
-      this.discard.setSelectionMode(1);
-      this.deck.setSelectionMode(1);
       this.drawed_cards.setSelectionMode(0);
 
       this.setupNotifications();
@@ -151,12 +127,19 @@ define([
     },
 
     onEnteringState: function (stateName, args) {
+      this.discard.setSelectionMode(0);
+      this.deck.setSelectionMode(0);
+
       switch (stateName) {
         case "playerTurn":
+          // TODO useless tooltip
           this.addTooltip("player_hand", _("Cards in my hand"), "");
           break;
-        case "playedCard":
-          // TODO tooltip on the deck and pile
+        case "playedCards":
+          if (this.isCurrentPlayerActive()) {
+            this.discard.setSelectionMode(1);
+            this.deck.setSelectionMode(1);
+          }
           break;
       }
     },
@@ -197,13 +180,24 @@ define([
       dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
     },
 
+    convertCardObjectToCardArray(cards_object) {
+      const cards = [];
+      for (var i in cards_object) cards.push(cards_object[i]);
+      return cards;
+    },
+
     newHand: function (notification) {
+      this.setHand(this.convertCardObjectToCardArray(notification.args.cards));
+    },
+
+    setHand: function (cards) {
       this.player_hand.removeAll();
 
-      for (var i in notification.args.cards) {
-        var card = notification.args.cards[i];
+      for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
+        this.card_value_by_id[card.id] = value;
+
         this.player_hand.addToStockWithId(
           this.getCardPosition(color, value),
           card.id
@@ -212,10 +206,15 @@ define([
     },
 
     discardedCards: function (notification) {
+      this.setDiscardedCards(
+        this.convertCardObjectToCardArray(notification.args.cards)
+      );
+    },
+
+    setDiscardedCards: function (cards) {
       this.discard.removeAll();
 
-      for (var i in notification.args.cards) {
-        var card = notification.args.cards[i];
+      for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
         this.discard.addToStockWithId(
@@ -226,10 +225,15 @@ define([
     },
 
     drawedCards: function (notification) {
+      this.setDrawedCards(
+        this.convertCardObjectToCardArray(notification.args.cards)
+      );
+    },
+
+    setDrawedCards: function (cards) {
       this.drawed_cards.removeAll();
 
-      for (var i in notification.args.cards) {
-        var card = notification.args.cards[i];
+      for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
         this.drawed_cards.addToStockWithId(
@@ -249,11 +253,15 @@ define([
     },
 
     playerHandSelectionChanged: function () {
-      // TODO check for wrong selection
-      // or prevent wrong selection after first select
-      console.log(this.player_hand.getSelectedItems());
-      console.log(this.card_value_by_id);
+      if (!this.doesCardsHaveSameValues(this.player_hand.getSelectedItems())) {
+        this.showMessage(
+          _("You can only play multiple card of same value"),
+          "error"
+        );
+        return;
+      }
     },
+
     deckSelected: function () {
       /*
        * Toggle selection of the drawed cards pile
@@ -275,7 +283,31 @@ define([
       }
     },
 
+    doesCardsHaveSameValues: function (cards) {
+      const selected_card_values = [];
+
+      for (const card of cards) {
+        const value = this.card_value_by_id[card.id];
+
+        if (!selected_card_values.length) {
+          selected_card_values.push(value);
+          continue;
+        }
+
+        if (!selected_card_values.includes(value)) {
+          return false;
+        }
+      }
+
+      return true;
+    },
+
     playCards: function () {
+      if (this.checkAction("playerTurn", false)) {
+        this.showMessage(_("Not your turn"), "error");
+        return;
+      }
+
       var cards = this.player_hand.getSelectedItems();
 
       if (cards.length === 0) {
@@ -283,15 +315,18 @@ define([
         return;
       }
 
-      if (this.checkAction("playerTurn", false)) {
-        this.showMessage(_("Not your turn"), "error");
+      if (!this.doesCardsHaveSameValues(cards)) {
+        this.showMessage(
+          _("You can only play multiple card of same value"),
+          "error"
+        );
         return;
       }
 
       var card_ids = "";
 
-      for (var i in cards) {
-        card_ids += cards[i].id + ";";
+      for (const card of cards) {
+        card_ids += card.id + ";";
       }
 
       console.log("played", card_ids);
@@ -352,7 +387,9 @@ define([
 
       this.ajaxcall(
         "/guibole/guibole/showCards.html",
-        {},
+        {
+          lock: true,
+        },
         this,
         function (result) {},
         function (is_error) {}

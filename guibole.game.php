@@ -191,9 +191,20 @@ class Guibole extends Table
     if (count($cards) != count($card_ids))
       throw new feException(self::_("Some of these cards don't exist"));
 
+    $card_values = array();
+
     foreach ($cards as $card) {
       if ($card['location'] != self::HAND || $card['location_arg'] != $current_player_id)
         throw new feException(self::_("Some of these cards are not in your hand"));
+
+      if (!count($card_values)) {
+        array_push($card_values, self::getCardValue($card));
+        continue;
+      }
+
+      if (!in_array(self::getCardValue($card), $card_values)) {
+        throw new feException(self::_("You can only play multiple card of same value"));
+      }
     }
 
     foreach ($card_ids as $card_id)
