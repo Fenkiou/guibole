@@ -99,19 +99,19 @@ define([
       }
 
       // Cards in player's hand
-      this.setHand(this.convertCardObjectToCardArray(this.gamedatas.hand));
+      this.setHand(this.getObjectsFromDatabaseObject(gamedatas.hand));
 
       // Discarded cards
       this.setDiscardedCards(
-        this.convertCardObjectToCardArray(this.gamedatas.discard)
+        this.getObjectsFromDatabaseObject(gamedatas.discard)
       );
 
       // Drawed cards
       this.setDrawedCards(
-        this.convertCardObjectToCardArray(this.gamedatas.drawed_cards)
+        this.getObjectsFromDatabaseObject(gamedatas.drawed_cards)
       );
 
-      var card = this.gamedatas.first_card_in_deck;
+      var card = gamedatas.first_card_in_deck;
       var color = card.type;
       var value = card.type_arg;
 
@@ -174,20 +174,29 @@ define([
     },
 
     setupNotifications: function () {
+      console.debug("Entering setupNotifications");
+
       dojo.subscribe("newHand", this, "newHand");
       dojo.subscribe("discardedCards", this, "discardedCards");
       dojo.subscribe("drawedCards", this, "drawedCards");
       dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
+      dojo.subscribe("updateScore", this, "updateScore");
+
+      console.debug("Leaving setupNotifications");
     },
 
-    convertCardObjectToCardArray(cards_object) {
-      const cards = [];
-      for (var i in cards_object) cards.push(cards_object[i]);
-      return cards;
+    getObjectsFromDatabaseObject(object) {
+      const objects = [];
+      for (var i in object) objects.push(object[i]);
+      return objects;
     },
 
     newHand: function (notification) {
-      this.setHand(this.convertCardObjectToCardArray(notification.args.cards));
+      console.debug("Entering newHand");
+
+      this.setHand(this.getObjectsFromDatabaseObject(notification.args.cards));
+
+      console.debug("Leaving newHand");
     },
 
     setHand: function (cards) {
@@ -207,7 +216,7 @@ define([
 
     discardedCards: function (notification) {
       this.setDiscardedCards(
-        this.convertCardObjectToCardArray(notification.args.cards)
+        this.getObjectsFromDatabaseObject(notification.args.cards)
       );
     },
 
@@ -226,7 +235,7 @@ define([
 
     drawedCards: function (notification) {
       this.setDrawedCards(
-        this.convertCardObjectToCardArray(notification.args.cards)
+        this.getObjectsFromDatabaseObject(notification.args.cards)
       );
     },
 
@@ -244,12 +253,28 @@ define([
     },
 
     setFirstCardInDeck: function (notification) {
+      console.debug("Entering setFirstCardInDeck");
+
       this.deck.removeAll();
 
       var card = notification.args.card;
       var color = card.type;
       var value = card.type_arg;
       this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
+
+      console.debug("Leaving setFirstCardInDeck");
+    },
+
+    updateScore: function (notification) {
+      console.debug("Entering updateScore");
+
+      for (const player of this.getObjectsFromDatabaseObject(
+        notification.args.players
+      )) {
+        this.scoreCtrl[player.id].setValue(player.score);
+      }
+
+      console.debug("Leaving updateScore");
     },
 
     playerHandSelectionChanged: function () {
