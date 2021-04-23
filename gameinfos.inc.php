@@ -25,26 +25,25 @@ $gameinfos = array(
   'year' => 2021,
 
   // Game publisher (use empty string if there is no publisher)
-  'publisher' => 'Alexandre Papin',
+  'publisher' => '',
 
   // Url of game publisher website
-  'publisher_website' => 'https://indaclouds.fr',
+  'publisher_website' => '',
 
   // Board Game Geek ID of the publisher
-  'publisher_bgg_id' => 85871206,
+  'publisher_bgg_id' => null,
 
   // Board game geek ID of the game
-  'bgg_id' => 88900,
-
+  'bgg_id' => 0,
 
   // Players configuration that can be played (ex: 2 to 4 players)
-  'players' => array(1, 2),
+  'players' => array(2, 3, 4, 5),
 
   // Suggest players to play with this number of players. Must be null if there is no such advice, or if there is only one possible player configuration.
-  'suggest_player_number' => 4,
+  'suggest_player_number' => null,
 
   // Discourage players to play with these numbers of players. Must be null if there is no such advice.
-  'not_recommend_player_number' => array(2, 6),
+  'not_recommend_player_number' => array(2),
   // 'not_recommend_player_number' => array( 2, 3 ),      // <= example: this is not recommended to play this game with 2 or 3 players
 
 
@@ -143,7 +142,7 @@ $gameinfos = array(
   //  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
   //  IMPORTANT: this list should be ORDERED, with the most important tag first.
   //  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-  'tags' => array(2),
+  'tags' => array(2, 11, 200),
 
 
   //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)

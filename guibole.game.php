@@ -217,8 +217,6 @@ class Guibole extends Table
     }
 
     if (!count($players_with_points)) {
-      //unset($player_hand_points[$current_player_id]);
-
       foreach ($players as $player_id => $player) {
         if ($player_id == $current_player_id)
           continue;
@@ -252,9 +250,22 @@ class Guibole extends Table
 
   function getGameProgression()
   {
-    // TODO: compute and return the game progression
+    $players = $this->getPlayersData();
 
-    return 0;
+    $game_length = $this->getGameStateValue('gameLengthOption') == 1 ? 100 : 500;
+    $lowest_score = $game_length;
+
+    foreach ($players as $player_id => $player) {
+      if ($player["score"] < $lowest_score) {
+        $lowest_score = $player["score"];
+      }
+    }
+
+    if ($lowest_score == $game_length) {
+      return 0;
+    }
+
+    return (($game_length - $lowest_score) * 100) / $game_length;
   }
 
   function zombieTurn($state, $active_player)
@@ -267,13 +278,6 @@ class Guibole extends Table
           $this->gamestate->nextState("zombiePass");
           break;
       }
-
-      return;
-    }
-
-    if ($state['type'] === "multipleactiveplayer") {
-      // Make sure player is in a non blocking status for role turn
-      $this->gamestate->setPlayerNonMultiactive($active_player, '');
 
       return;
     }
@@ -414,6 +418,7 @@ class Guibole extends Table
   {
     return self::getCollectionFromDb('SELECT player_id AS id, player_score AS score FROM player');
   }
+
   function notifyPlayersAboutScores()
   {
     self::notifyAllPlayers('updateScore', '', array(

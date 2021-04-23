@@ -1,0 +1,4 @@
+dist/
+vendor/
+.hsftp
+bgaproject.yml

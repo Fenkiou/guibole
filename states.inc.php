@@ -24,8 +24,8 @@ $machinestates = array(
     "description" => clienttranslate('${actplayer} must play cards or end round'),
     "descriptionmyturn" => clienttranslate('${you} must play cards or end round'),
     "type" => "activeplayer",
-    "possibleactions" => array("endRound", "playedCards"),
-    "transitions" => array("endRound" => 30, "playedCards" => 22)
+    "possibleactions" => array("endRound", "playedCards", "zombiePass"),
+    "transitions" => array("endRound" => 30, "playedCards" => 22, "zombiePass" => 98)
   ),
 
   22 => array(
@@ -51,6 +51,14 @@ $machinestates = array(
     "type" => "game",
     "action" => "endRound",
     "transitions" => array("startRound" => 20, "gameEnd" => 99)
+  ),
+
+  98 => array(
+    "name" => "zombiePass",
+    "description" => "",
+    "type" => "game",
+    "action" => "nextPlayer",
+    "transitions" => array("playerTurn" => 21)
   ),
 
   // Final state.
