@@ -8,18 +8,19 @@ class Guibole extends Table
   const DECK = 'deck';
   const HAND = 'hand';
   const DISCARD = 'discard';
+  const TMP_DISCARD = 'tmp_discard';
   const DRAWED_CARDS = 'drawed_cards';
 
   function __construct()
   {
     parent::__construct();
 
-    self::initGameStateLabels(array(
+    $this->initGameStateLabels(array(
       "startingPlayerId" => 10,
       "gameLengthOption" => 100,
     ));
 
-    $this->cards = self::getNew("module.common.deck");
+    $this->cards = $this->getNew("module.common.deck");
     $this->cards->init("card");
   }
 
@@ -30,14 +31,14 @@ class Guibole extends Table
 
   protected function setupNewGame($players, $options = array())
   {
-    $gameinfos = self::getGameinfos();
+    $gameinfos = $this->getGameinfos();
 
     // Set the colors of the players with HTML color code
     // The default below is red/green/blue/orange/brown
     // The number of colors defined here must correspond to the maximum number of players allowed for the game
     $default_colors = $gameinfos['player_colors'];
 
-    $starting_score = self::getGameStateValue('gameLengthOption') == 1 ? 100 : 500;
+    $starting_score = $this->getGameStateValue('gameLengthOption') == 1 ? 100 : 500;
 
 
     // Create players
@@ -48,10 +49,10 @@ class Guibole extends Table
       $values[] = "('" . $player_id . "','$starting_score','$color','" . $player['player_canal'] . "','" . addslashes($player['player_name']) . "','" . addslashes($player['player_avatar']) . "')";
     }
     $sql .= implode($values, ',');
-    self::DbQuery($sql);
+    $this->DbQuery($sql);
 
-    self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
-    self::reloadPlayersBasicInfos();
+    $this->reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
+    $this->reloadPlayersBasicInfos();
 
     /************ Start the game initialization *****/
 
@@ -69,7 +70,7 @@ class Guibole extends Table
     // Activate first player (which is in general a good idea :) )
     $this->activeNextPlayer();
 
-    self::setGameStateInitialValue('startingPlayerId', self::getActivePlayerId());
+    $this->setGameStateInitialValue('startingPlayerId', $this->getActivePlayerId());
 
     /************ End of the game initialization *****/
   }
@@ -87,15 +88,15 @@ class Guibole extends Table
   {
     $result = array();
 
-    $current_player_id = self::getCurrentPlayerId();
+    $current_player_id = $this->getCurrentPlayerId();
 
-    $result['players'] = self::getPlayersData();
+    $result['players'] = $this->getPlayersData();
 
     $result[self::HAND] = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
-    $result['first_card_in_deck'] = self::getFirstCardInDeck();
-    $result[self::DISCARD] = self::getDiscardedCards();
-    $result[self::DRAWED_CARDS] = self::getDrawedCards();
+    $result['first_card_in_deck'] = $this->getFirstCardInDeck();
+    $result[self::DISCARD] = $this->getDiscardedCards();
+    $result[self::DRAWED_CARDS] = $this->getDrawedCards();
 
     $result['state_name'] = $this->gamestate->state()["name"];
 
@@ -107,27 +108,26 @@ class Guibole extends Table
     $this->cards->moveAllCardsInLocation(null, self::DECK);
     $this->cards->shuffle(self::DECK);
 
-    $players = self::loadPlayersBasicInfos();
+    $players = $this->loadPlayersBasicInfos();
 
     foreach ($players as $player_id => $player) {
       $this->cards->pickCards(5, self::DECK, $player_id);
-      self::notifyPlayerAboutHisHand($player_id);
+      $this->notifyPlayerAboutHisHand($player_id);
     }
 
-    $cards = array($this->cards->pickCardForLocation(self::DECK, self::DISCARD));
-    self::setDiscardedCards($cards);
-    self::notifyFirstCardInDeck();
+    $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
+    $this->setDiscardedCards($cards);
+    $this->notifyFirstCardInDeck();
 
-    self::dump("startingPlayerId", self::getGameStateValue("startingPlayerId"));
-    $this->gamestate->changeActivePlayer(self::getGameStateValue("startingPlayerId"));
+    $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
     $this->gamestate->nextState("playerTurn");
   }
 
   function playCards($card_ids)
   {
-    $current_player_id = self::getCurrentPlayerId();
+    $current_player_id = $this->getCurrentPlayerId();
 
-    $cards = self::getCards($card_ids);
+    $cards = $this->getCards($card_ids);
 
     if (count($cards) != count($card_ids))
       throw new feException(self::_("Some of these cards don't exist"));
@@ -139,11 +139,11 @@ class Guibole extends Table
         throw new feException(self::_("Some of these cards are not in your hand"));
 
       if (!count($card_values)) {
-        array_push($card_values, self::getCardValue($card));
+        array_push($card_values, $this->getCardValue($card));
         continue;
       }
 
-      if (!in_array(self::getCardValue($card), $card_values)) {
+      if (!in_array($this->getCardValue($card), $card_values)) {
         throw new feException(self::_("You can only play multiple card of same value"));
       }
     }
@@ -151,12 +151,12 @@ class Guibole extends Table
     foreach ($card_ids as $card_id)
       $this->cards->playCard($card_id);
 
-    self::setDrawedCards($cards);
+    $this->setDrawedCards($cards);
 
     $cards = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
     // Notify player about his cards
-    self::notifyPlayer($current_player_id, 'newHand', '', array(
+    $this->notifyPlayer($current_player_id, 'newHand', '', array(
       'cards' => $cards
     ));
 
@@ -165,7 +165,7 @@ class Guibole extends Table
 
   function endTurn($card_id)
   {
-    self::currentUserTakeCard($card_id);
+    $this->currentUserTakeCard($card_id);
 
     $drawed_cards = $this->getDrawedCards();
     $this->setDiscardedCards($drawed_cards);
@@ -177,8 +177,8 @@ class Guibole extends Table
 
   function nextPlayer()
   {
-    $player_id = self::activeNextPlayer();
-    self::giveExtraTime($player_id);
+    $player_id = $this->activeNextPlayer();
+    $this->giveExtraTime($player_id);
 
     $this->gamestate->nextState("playerTurn");
   }
@@ -190,10 +190,10 @@ class Guibole extends Table
 
   function endRound()
   {
-    self::ensureCurrentPlayer();
+    $this->ensureCurrentPlayer();
 
-    $current_player_id = self::getCurrentPlayerId();
-    $current_player_hand_points = self::getHandPointsForPlayerId($current_player_id);
+    $current_player_id = $this->getCurrentPlayerId();
+    $current_player_hand_points = $this->getHandPointsForPlayerId($current_player_id);
 
     $players_with_points = array();
 
@@ -201,14 +201,14 @@ class Guibole extends Table
       $players_with_points[$current_player_id] = 45;
     }
 
-    $players = self::loadPlayersBasicInfos();
+    $players = $this->loadPlayersBasicInfos();
 
     if (!count($players_with_points)) {
       foreach ($players as $player_id => $player) {
         if ($player_id == $current_player_id)
           continue;
 
-        $player_hand_points = self::getHandPointsForPlayerId($player_id);
+        $player_hand_points = $this->getHandPointsForPlayerId($player_id);
 
         if ($player_hand_points <= $current_player_hand_points) {
           $players_with_points[$current_player_id] = $current_player_hand_points * 2 + 25;
@@ -222,27 +222,27 @@ class Guibole extends Table
         if ($player_id == $current_player_id)
           continue;
 
-        $player_hand_points = self::getHandPointsForPlayerId($player_id);
+        $player_hand_points = $this->getHandPointsForPlayerId($player_id);
         $players_with_points[$player_id] = $player_hand_points;
       }
     }
 
     foreach ($players_with_points as $player_id => $player_points) {
-      self::updateScoreForPlayer($player_id, $player_points);
+      $this->updateScoreForPlayer($player_id, $player_points);
     }
 
     $end_game = false;
     foreach ($players as $player_id => $player) {
-      if (self::getPlayerScore($player_id) <= 0) {
+      if ($this->getPlayerScore($player_id) <= 0) {
         $end_game = true;
         break;
       }
     }
 
-    self::notifyPlayersAboutScores();
+    $this->notifyPlayersAboutScores();
 
     if (!$end_game) {
-      self::setGameStateValue("startingPlayerId", self::getPlayerAfter(self::getActivePlayerId()));
+      $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getActivePlayerId()));
       $this->gamestate->nextState("startRound");
     } else {
       $this->gamestate->nextState("gameEnd");
@@ -301,25 +301,25 @@ class Guibole extends Table
 
   function setDrawedCards($cards)
   {
-    $this->cards->moveCards(self::getCardIds($cards), self::DRAWED_CARDS);
+    $this->cards->moveCards($this->getCardIds($cards), self::DRAWED_CARDS);
 
     // Notify all other players about the discarded cards
-    self::notifyAllPlayers('drawedCards', '', array(
+    $this->notifyAllPlayers('drawedCards', '', array(
       'cards' => $cards
     ));
   }
 
   function getDiscardedCards()
   {
-    return $this->cards->getCardsInLocation(self::DISCARD);
+    return $this->cards->getCardsInLocation(self::TMP_DISCARD);
   }
 
   function setDiscardedCards($cards)
   {
-    self::dump("setDiscardedCards", $cards);
-    $this->cards->moveCards(self::getCardIds($cards), self::DISCARD);
+    $this->cards->moveAllCardsInLocation(self::TMP_DISCARD, self::DISCARD);
+    $this->cards->moveCards($this->getCardIds($cards), self::TMP_DISCARD);
 
-    self::notifyAllPlayers('discardedCards', '', array(
+    $this->notifyAllPlayers('discardedCards', '', array(
       'cards' => $cards
     ));
   }
@@ -331,8 +331,8 @@ class Guibole extends Table
 
   function notifyFirstCardInDeck()
   {
-    self::notifyAllPlayers('setFirstCardInDeck', '', array(
-      'card' => self::getFirstCardInDeck()
+    $this->notifyAllPlayers('setFirstCardInDeck', '', array(
+      'card' => $this->getFirstCardInDeck()
     ));
   }
 
@@ -348,29 +348,29 @@ class Guibole extends Table
 
   function currentUserTakeCard($card_id)
   {
-    self::ensureCurrentPlayer();
+    $this->ensureCurrentPlayer();
 
     $card = $this->cards->getCard($card_id);
 
     if (!$card)
       throw new feException(self::_("This card does not exists"));
 
-    if ($card['location'] != self::DECK && $card['location'] != self::DISCARD)
+    if ($card['location'] != self::DECK && $card['location'] != self::TMP_DISCARD)
       throw new feException(self::_("This card cannot be taken"));
 
-    $current_player_id = self::getCurrentPlayerId();
+    $current_player_id = $this->getCurrentPlayerId();
     $this->cards->moveCard($card_id, self::HAND, $current_player_id);
 
     if ($card['location'] == self::DECK) {
-      self::notifyFirstCardInDeck();
+      $this->notifyFirstCardInDeck();
     }
 
-    self::notifyPlayerAboutHisHand($current_player_id);
+    $this->notifyPlayerAboutHisHand($current_player_id);
   }
 
   function notifyPlayerAboutHisHand($player_id)
   {
-    self::notifyPlayer($player_id, 'newHand', '', array(
+    $this->notifyPlayer($player_id, 'newHand', '', array(
       'cards' => $this->cards->getCardsInLocation(self::HAND, $player_id)
     ));
   }
@@ -387,7 +387,7 @@ class Guibole extends Table
 
   function ensureCurrentPlayer()
   {
-    if (self::getActivePlayerId() != self::getCurrentPlayerId()) {
+    if ($this->getActivePlayerId() != $this->getCurrentPlayerId()) {
       throw new feException(self::_("This is not your turn."));
     }
   }
@@ -398,26 +398,26 @@ class Guibole extends Table
     $points = 0;
 
     foreach ($cards as $card)
-      $points += self::getCardValue($card);
+      $points += $this->getCardValue($card);
 
     return $points;
   }
 
   function getPlayerScore($player_id)
   {
-    return self::getUniqueValueFromDB('SELECT player_score FROM player WHERE player_id = ' . $player_id);
+    return $this->getUniqueValueFromDB('SELECT player_score FROM player WHERE player_id = ' . $player_id);
   }
 
   function updateScoreForPlayer($player_id, $points)
   {
-    $new_score = self::getPlayerScore($player_id) - $points;
-    self::DbQuery('UPDATE player SET player_score = ' . $new_score . ' WHERE player_id = ' . $player_id);
+    $new_score = $this->getPlayerScore($player_id) - $points;
+    $this->DbQuery('UPDATE player SET player_score = ' . $new_score . ' WHERE player_id = ' . $player_id);
     return $new_score;
   }
 
   function getPlayersData()
   {
-    $players = self::getCollectionFromDb('SELECT player_id AS id, player_score AS score FROM player');
+    $players = $this->getCollectionFromDb('SELECT player_id AS id, player_score AS score FROM player');
     foreach ($players as $player_id => &$player) {
       $player["cards_count"] = $this->getPlayerCardsCount($player_id);
     }
@@ -431,8 +431,8 @@ class Guibole extends Table
 
   function notifyPlayersAboutScores()
   {
-    self::notifyAllPlayers('updateScore', '', array(
-      'players' => self::getPlayersData()
+    $this->notifyAllPlayers('updateScore', '', array(
+      'players' => $this->getPlayersData()
     ));
   }
 
