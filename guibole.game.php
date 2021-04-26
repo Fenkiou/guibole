@@ -167,9 +167,10 @@ class Guibole extends Table
   {
     self::currentUserTakeCard($card_id);
 
-    $drawed_cards = self::getDrawedCards();
-    self::setDiscardedCards($drawed_cards);
-    self::setDrawedCards(array());
+    $drawed_cards = $this->getDrawedCards();
+    $this->setDiscardedCards($drawed_cards);
+    $this->setDrawedCards(array());
+    $this->notifyAllPlayersAboutCurrentPlayerCardsCount();
 
     $this->gamestate->nextState("nextPlayer");
   }
@@ -416,13 +417,30 @@ class Guibole extends Table
 
   function getPlayersData()
   {
-    return self::getCollectionFromDb('SELECT player_id AS id, player_score AS score FROM player');
+    $players = self::getCollectionFromDb('SELECT player_id AS id, player_score AS score FROM player');
+    foreach ($players as $player_id => &$player) {
+      $player["cards_count"] = $this->getPlayerCardsCount($player_id);
+    }
+    return $players;
+  }
+
+  function getPlayerCardsCount($player_id)
+  {
+    return count($this->cards->getCardsInLocation(self::HAND, $player_id));
   }
 
   function notifyPlayersAboutScores()
   {
     self::notifyAllPlayers('updateScore', '', array(
       'players' => self::getPlayersData()
+    ));
+  }
+
+  function notifyAllPlayersAboutCurrentPlayerCardsCount()
+  {
+    $player_id = $this->getCurrentPlayerId();
+    $this->notifyAllPlayers('currentPlayerCardsCountUpdate', '', array(
+      'player' => array("id" => $player_id, "cards_count" => $this->getPlayerCardsCount($player_id))
     ));
   }
 }

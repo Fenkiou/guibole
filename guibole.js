@@ -120,6 +120,29 @@ define([
       this.drawed_cards.setSelectionMode(0);
 
       this.setupNotifications();
+
+      this.cards_in_hand = {};
+      for (var player_id in gamedatas.players) {
+        var player = gamedatas.players[player_id];
+
+        // Setting up players boards if needed
+        var player_board_div = $("player_board_" + player_id);
+        dojo.place(
+          this.format_block("jstpl_player_board", player),
+          player_board_div
+        );
+
+        // set number of cards in hand for each player
+        this.cards_in_hand[player_id] = new ebg.counter();
+        this.cards_in_hand[player_id].create("cards_count_p" + player_id);
+        this.cards_in_hand[player_id].setValue(player.cards_count);
+
+        this.addTooltip(
+          "panel_p" + player_id,
+          _("Number of cards in player's hand"),
+          ""
+        );
+      }
     },
 
     getCardPosition: function (color, value) {
@@ -181,6 +204,11 @@ define([
       dojo.subscribe("drawedCards", this, "drawedCards");
       dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
       dojo.subscribe("updateScore", this, "updateScore");
+      dojo.subscribe(
+        "currentPlayerCardsCountUpdate",
+        this,
+        "currentPlayerCardsCountUpdate"
+      );
 
       console.debug("Leaving setupNotifications");
     },
@@ -275,6 +303,16 @@ define([
       }
 
       console.debug("Leaving updateScore");
+    },
+
+    currentPlayerCardsCountUpdate: function (notification) {
+      console.debug("Entering currentPlayerCardsCountUpdate");
+
+      this.cards_in_hand[notification.args.player.id].setValue(
+        notification.args.player.cards_count
+      );
+
+      console.debug("Leaving currentPlayerCardsCountUpdate");
     },
 
     playerHandSelectionChanged: function () {

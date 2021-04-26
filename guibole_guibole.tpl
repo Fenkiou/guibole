@@ -10,6 +10,15 @@
 
 <div id="player_hand" class="whiteblock"></div>
 
-<script type="text/javascript"></script>
+<script type="text/javascript">
+var jstpl_player_board = ' \
+  <div id="panel_p${id}"> \
+    <span id="cards_count_p${id}"> \
+    </span> \
+    <i class="fa fa-hand-stop-o"></i> \
+  </div> \
+';
+
+</script>
 
 {OVERALL_GAME_FOOTER}
