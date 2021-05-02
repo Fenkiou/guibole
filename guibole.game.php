@@ -108,12 +108,7 @@ class Guibole extends Table
     $this->cards->moveAllCardsInLocation(null, self::DECK);
     $this->cards->shuffle(self::DECK);
 
-    $players = $this->loadPlayersBasicInfos();
-
-    foreach ($players as $player_id => $player) {
-      $this->cards->pickCards(5, self::DECK, $player_id);
-      $this->notifyPlayerAboutHisHand($player_id);
-    }
+    $this->dealCardsToPlayers();
 
     $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
     $this->setDiscardedCards($cards);
@@ -451,5 +446,20 @@ class Guibole extends Table
     $this->notifyAllPlayers('currentPlayerCardsCountUpdate', '', array(
       'player' => array("id" => $player_id, "cards_count" => $this->getPlayerCardsCount($player_id))
     ));
+  }
+
+  function dealCardsToPlayers()
+  {
+    $players = $this->loadPlayersBasicInfos();
+
+    for ($i = 0; $i < 5; $i++) {
+      foreach ($players as $player_id => $player) {
+        $this->cards->pickCards(1, self::DECK, $player_id);
+      }
+    }
+
+    foreach ($players as $player_id => $player) {
+      $this->notifyPlayerAboutHisHand($player_id);
+    }
   }
 }
