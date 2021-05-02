@@ -117,6 +117,7 @@ class Guibole extends Table
 
     $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
     $this->setDiscardedCards($cards);
+    $this->setShowedCards(array());
     $this->notifyFirstCardInDeck();
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
@@ -239,7 +240,7 @@ class Guibole extends Table
       }
     }
 
-    $this->notifyPlayersAboutScores();
+    $this->notifyPlayersAboutScores($this->cards->getCardsInLocation(self::HAND, $current_player_id));
 
     if (!$end_game) {
       $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getActivePlayerId()));
@@ -321,6 +322,13 @@ class Guibole extends Table
 
     $this->notifyAllPlayers('discardedCards', '', array(
       'cards' => $cards
+    ));
+  }
+
+  function setShowedCards($cards)
+  {
+    $this->notifyAllPlayers('showedCards', '', array(
+      'cards' => $cards,
     ));
   }
 
@@ -429,10 +437,11 @@ class Guibole extends Table
     return count($this->cards->getCardsInLocation(self::HAND, $player_id));
   }
 
-  function notifyPlayersAboutScores()
+  function notifyPlayersAboutScores($showedCards)
   {
     $this->notifyAllPlayers('updateScore', '', array(
-      'players' => $this->getPlayersData()
+      'players' => $this->getPlayersData(),
+      'cards' => $showedCards
     ));
   }
 

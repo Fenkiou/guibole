@@ -204,11 +204,14 @@ define([
       dojo.subscribe("drawedCards", this, "drawedCards");
       dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
       dojo.subscribe("updateScore", this, "updateScore");
+      this.notifqueue.setSynchronous("updateScore", 5000);
+
       dojo.subscribe(
         "currentPlayerCardsCountUpdate",
         this,
         "currentPlayerCardsCountUpdate"
       );
+      dojo.subscribe("showedCards", this, "showedCards");
 
       console.debug("Leaving setupNotifications");
     },
@@ -267,6 +270,12 @@ define([
       );
     },
 
+    showedCards: function (notification) {
+      this.setDrawedCards(
+        this.getObjectsFromDatabaseObject(notification.args.cards)
+      );
+    },
+
     setDrawedCards: function (cards) {
       this.drawed_cards.removeAll();
 
@@ -296,10 +305,14 @@ define([
     updateScore: function (notification) {
       console.debug("Entering updateScore");
 
+      this.setDrawedCards(
+        this.getObjectsFromDatabaseObject(notification.args.cards)
+      );
+
       for (const player of this.getObjectsFromDatabaseObject(
         notification.args.players
       )) {
-        this.scoreCtrl[player.id].setValue(player.score);
+        this.scoreCtrl[player.id].toValue(player.score);
       }
 
       console.debug("Leaving updateScore");

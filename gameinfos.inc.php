@@ -130,9 +130,20 @@ $gameinfos = array(
   // Each paragraph must be wrapped with totranslate() for translation and should not contain html (plain text without formatting).
   // A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
   'presentation' => array(
-    //    totranslate("This wonderful game is about geometric shapes!"),
-    //    totranslate("It was awarded best triangle game of the year in 2005 and nominated for the Spiel des Jahres."),
-    //    ...
+    totranslate(
+      "This is a simple card game where the goal is to score the less 
+      possible points."
+    ),
+    totranslate(
+      "You play it with a classic card game (52 cards) without jokers. The 
+      cards values are as follow: A = 1, 2 = 2, 3 = 3, etc... J, Q and K = 10 
+      points.
+      "
+    ),
+    totranslate(
+      "You start with 5 cards in your hand and you want the less possible 
+      points in it."
+    ),
   ),
 
   // Games categories
