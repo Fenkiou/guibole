@@ -208,18 +208,9 @@ class Guibole extends Table
 
         if ($player_hand_points <= $current_player_hand_points) {
           $players_with_points[$current_player_id] = $current_player_hand_points * 2 + 25;
-          break;
+        } else {
+          $players_with_points[$player_id] = $player_hand_points;
         }
-      }
-    }
-
-    if (!count($players_with_points)) {
-      foreach ($players as $player_id => $player) {
-        if ($player_id == $current_player_id)
-          continue;
-
-        $player_hand_points = $this->getHandPointsForPlayerId($player_id);
-        $players_with_points[$player_id] = $player_hand_points;
       }
     }
 

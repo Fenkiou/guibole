@@ -313,6 +313,7 @@ define([
         notification.args.players
       )) {
         this.scoreCtrl[player.id].toValue(player.score);
+        this.cards_in_hand[player.id].toValue(5);
       }
 
       console.debug("Leaving updateScore");
