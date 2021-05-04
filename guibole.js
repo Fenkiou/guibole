@@ -28,16 +28,19 @@ define([
       );
       this.player_hand.image_items_per_row = 13;
       this.player_hand.centerItems = true;
+      this.player_hand.extraClasses = "guibole_card";
 
       this.deck = new ebg.stock();
       this.deck.create(this, $("deck"), this.cardwidth, this.cardheight);
       this.deck.image_items_per_row = 1;
       this.deck.centerItems = true;
+      this.deck.extraClasses = "guibole_card";
 
       this.discard = new ebg.stock();
       this.discard.create(this, $("discard"), this.cardwidth, this.cardheight);
       this.discard.image_items_per_row = 13;
       this.discard.centerItems = true;
+      this.discard.extraClasses = "guibole_card";
 
       this.drawed_cards = new ebg.stock();
       this.drawed_cards.create(
@@ -48,6 +51,7 @@ define([
       );
       this.drawed_cards.image_items_per_row = 13;
       this.drawed_cards.centerItems = true;
+      this.drawed_cards.extraClasses = "guibole_card";
 
       dojo.connect(
         this.player_hand,
@@ -183,14 +187,10 @@ define([
               _("Play selected cards"),
               "playCards"
             );
-            this.addActionButton(
-              "showCards_button",
-              _("Show cards"),
-              "showCards"
-            );
+            this.addActionButton("showCards_button", _("Guibole"), "showCards");
             break;
           case "playedCards":
-            this.addActionButton("endTurn_button", _("End turn"), "endTurn");
+            this.addActionButton("endTurn_button", _("Confirm"), "endTurn");
             break;
         }
       }

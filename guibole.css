@@ -1,9 +1,37 @@
+.guibole_card {
+  border-radius: 8px;
+}
+
 #table {
 }
 
 #card_mat {
   position: relative;
   min-width: 380px;
-  height: 303px;
+  height: 320px;
   background-color: green;
+}
+
+#card_mat .guibole_card {
+  top: 5px !important;
+}
+
+#deck {
+  height: 107px !important;
+}
+
+#discard {
+  height: 107px !important;
+}
+
+#drawed_cards {
+  height: 107px !important;
+}
+
+#player_hand {
+  height: 100px;
+}
+
+#player_hand .guibole_card {
+  top: 11px !important;
 }

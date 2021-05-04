@@ -2,8 +2,8 @@
 
 <div id="table">
   <div id="card_mat">
-      <div id="deck"></div>
-      <div id="discard"></div>
+    <div id="deck"></div>
+    <div id="discard"></div>
     <div id="drawed_cards"></div>
   </div>
 </div>
@@ -18,7 +18,6 @@ var jstpl_player_board = ' \
     <i class="fa fa-hand-stop-o"></i> \
   </div> \
 ';
-
 </script>
 
 {OVERALL_GAME_FOOTER}
