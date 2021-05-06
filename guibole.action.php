@@ -33,20 +33,20 @@ class action_guibole extends APP_GameAction
     self::ajaxResponse();
   }
 
-  public function endTurn()
+  public function drawCard()
   {
-    self::trace("endTurn");
+    self::trace("drawCard");
     self::setAjaxMode();
     $card_id = self::getArg("id", AT_posint, true);
-    $this->game->endTurn($card_id);
+    $this->game->drawCard($card_id);
     self::ajaxResponse();
   }
 
-  public function showCards()
+  public function endRound()
   {
-    self::trace("showCards");
+    self::trace("endRound");
     self::setAjaxMode();
-    $this->game->showCards();
+    $this->game->endRound();
     self::ajaxResponse();
   }
 }

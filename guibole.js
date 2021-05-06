@@ -158,11 +158,11 @@ define([
       this.deck.setSelectionMode(0);
 
       switch (stateName) {
-        case "playerTurn":
+        case "playCardsOrEndRoundState":
           // TODO useless tooltip
           this.addTooltip("player_hand", _("Cards in my hand"), "");
           break;
-        case "playedCards":
+        case "drawCardState":
           if (this.isCurrentPlayerActive()) {
             this.discard.setSelectionMode(1);
             this.deck.setSelectionMode(1);
@@ -181,16 +181,16 @@ define([
     onUpdateActionButtons: function (stateName, args) {
       if (this.isCurrentPlayerActive()) {
         switch (stateName) {
-          case "playerTurn":
+          case "playCardsOrEndRoundState":
             this.addActionButton(
               "playCards_button",
               _("Play selected cards"),
               "playCards"
             );
-            this.addActionButton("showCards_button", _("Guibole"), "showCards");
+            this.addActionButton("endRound_button", _("Guibole"), "endRound");
             break;
-          case "playedCards":
-            this.addActionButton("endTurn_button", _("Confirm"), "endTurn");
+          case "drawCardState":
+            this.addActionButton("drawCard_button", _("Confirm"), "drawCard");
             break;
         }
       }
@@ -204,7 +204,7 @@ define([
       dojo.subscribe("drawedCards", this, "drawedCards");
       dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
       dojo.subscribe("updateScore", this, "updateScore");
-      this.notifqueue.setSynchronous("updateScore", 5000);
+      //this.notifqueue.setSynchronous("updateScore", 5000);
 
       dojo.subscribe(
         "currentPlayerCardsCountUpdate",
@@ -380,7 +380,7 @@ define([
     },
 
     playCards: function () {
-      if (this.checkAction("playerTurn", false)) {
+      if (this.checkAction("playCardsOrEndRoundState", false)) {
         this.showMessage(_("Not your turn"), "error");
         return;
       }
@@ -425,8 +425,8 @@ define([
       this.discard.unselectAll();
     },
 
-    endTurn: function () {
-      if (this.checkAction("playedCards", false)) {
+    drawCard: function () {
+      if (this.checkAction("drawCardState", false)) {
         this.showMessage(_("Not your turn"), "error");
         return;
       }
@@ -442,7 +442,7 @@ define([
       }
 
       this.ajaxcall(
-        "/guibole/guibole/endTurn.html",
+        "/guibole/guibole/drawCard.html",
         {
           id: card.id,
           lock: true,
@@ -456,14 +456,14 @@ define([
       this.discard.unselectAll();
     },
 
-    showCards: function () {
-      if (this.checkAction("playerTurn", false)) {
+    endRound: function () {
+      if (this.checkAction("playCardsOrEndRoundState", false)) {
         this.showMessage(_("Not your turn"), "error");
         return;
       }
 
       this.ajaxcall(
-        "/guibole/guibole/showCards.html",
+        "/guibole/guibole/endRound.html",
         {
           lock: true,
         },

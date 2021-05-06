@@ -116,7 +116,7 @@ class Guibole extends Table
     $this->notifyFirstCardInDeck();
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
-    $this->gamestate->nextState("playerTurn");
+    $this->gamestate->nextState("playCardsOrEndRoundState");
   }
 
   function playCards($card_ids)
@@ -156,10 +156,10 @@ class Guibole extends Table
       'cards' => $cards
     ));
 
-    $this->gamestate->nextState("playedCards");
+    $this->gamestate->nextState("drawCardState");
   }
 
-  function endTurn($card_id)
+  function drawCard($card_id)
   {
     $this->currentUserTakeCard($card_id);
 
@@ -168,20 +168,15 @@ class Guibole extends Table
     $this->setDrawedCards(array());
     $this->notifyAllPlayersAboutCurrentPlayerCardsCount();
 
-    $this->gamestate->nextState("nextPlayer");
+    $this->gamestate->nextState("activateNextPlayerState");
   }
 
-  function nextPlayer()
+  function activateNextPlayerState()
   {
     $player_id = $this->activeNextPlayer();
     $this->giveExtraTime($player_id);
 
-    $this->gamestate->nextState("playerTurn");
-  }
-
-  function showCards()
-  {
-    $this->gamestate->nextState("endRound");
+    $this->gamestate->nextState("playCardsOrEndRoundState");
   }
 
   function endRound()
@@ -218,6 +213,16 @@ class Guibole extends Table
       $this->updateScoreForPlayer($player_id, $player_points);
     }
 
+    $this->notifyPlayersAboutScores($this->cards->getCardsInLocation(self::HAND, $current_player_id));
+
+    $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getActivePlayerId()));
+    $this->gamestate->nextState("endRoundState");
+  }
+
+  function endRoundState()
+  {
+    $players = $this->loadPlayersBasicInfos();
+
     $end_game = false;
     foreach ($players as $player_id => $player) {
       if ($this->getPlayerScore($player_id) <= 0) {
@@ -226,10 +231,7 @@ class Guibole extends Table
       }
     }
 
-    $this->notifyPlayersAboutScores($this->cards->getCardsInLocation(self::HAND, $current_player_id));
-
     if (!$end_game) {
-      $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getActivePlayerId()));
       $this->gamestate->nextState("startRound");
     } else {
       $this->gamestate->nextState("gameEnd");
@@ -295,6 +297,7 @@ class Guibole extends Table
       'cards' => $cards
     ));
 
+    // 
     if (!count($cards))
       return;
 
@@ -343,6 +346,8 @@ class Guibole extends Table
 
   function getFirstCardInDeck()
   {
+    # Take everything except the last card of the discard
+    # put that in the deck and shuffle it
     return $this->cards->getCardOnTop(self::DECK);
   }
 

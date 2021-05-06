@@ -16,40 +16,40 @@ $machinestates = array(
     "description" => "",
     "type" => "game",
     "action" => "startRound",
-    "transitions" => array("playerTurn" => 21)
+    "transitions" => array("playCardsOrEndRoundState" => 21)
   ),
 
   21 => array(
-    "name" => "playerTurn",
+    "name" => "playCardsOrEndRoundState",
     "description" => clienttranslate('${actplayer} must play cards or end round'),
     "descriptionmyturn" => clienttranslate('${you} must play cards or end round'),
     "type" => "activeplayer",
-    "possibleactions" => array("endRound", "playedCards", "zombiePass"),
-    "transitions" => array("endRound" => 30, "playedCards" => 22, "zombiePass" => 98)
+    "possibleactions" => array("endRoundState", "drawCardState", "zombiePass"),
+    "transitions" => array("endRoundState" => 30, "drawCardState" => 22, "zombiePass" => 98)
   ),
 
   22 => array(
-    "name" => "playedCards",
+    "name" => "drawCardState",
     "description" => clienttranslate('${actplayer} must take a card from deck or discard'),
     "descriptionmyturn" => clienttranslate('${you} must take a card from deck or discard'),
     "type" => "activeplayer",
-    "possibleactions" => array("nextPlayer"),
-    "transitions" => array("nextPlayer" => 24)
+    "possibleactions" => array("activateNextPlayerState"),
+    "transitions" => array("activateNextPlayerState" => 24)
   ),
 
   24 => array(
-    "name" => "nextPlayer",
+    "name" => "activateNextPlayerState",
     "description" => "",
     "type" => "game",
-    "action" => "nextPlayer",
-    "transitions" => array("playerTurn" => 21)
+    "action" => "activateNextPlayerState",
+    "transitions" => array("playCardsOrEndRoundState" => 21)
   ),
 
   30 => array(
-    "name" => "endRound",
+    "name" => "endRoundState",
     "description" => "",
     "type" => "game",
-    "action" => "endRound",
+    "action" => "endRoundState",
     "transitions" => array("startRound" => 20, "gameEnd" => 99)
   ),
 
@@ -57,8 +57,8 @@ $machinestates = array(
     "name" => "zombiePass",
     "description" => "",
     "type" => "game",
-    "action" => "nextPlayer",
-    "transitions" => array("playerTurn" => 21)
+    "action" => "activateNextPlayerState",
+    "transitions" => array("playCardsOrEndRoundState" => 21)
   ),
 
   // Final state.
