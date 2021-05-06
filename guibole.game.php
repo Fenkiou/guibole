@@ -294,6 +294,29 @@ class Guibole extends Table
     $this->notifyAllPlayers('drawedCards', '', array(
       'cards' => $cards
     ));
+
+    if (!count($cards))
+      return;
+
+    $card_count = _('one');
+    if (count($cards) == 2)
+      $card_count = _('two');
+    if (count($cards) == 3)
+      $card_count = _('three');
+    if (count($cards) == 4)
+      $card_count = _('four');
+
+    $this->notifyAllPlayers(
+      'message',
+      _('${player_name} played ${card_count} ${card_value}'),
+      array(
+        'player_id' => $this->getActivePlayerId(),
+        'player_name' => $this->getActivePlayerName(),
+        'card_count' => $card_count,
+        'card_value' => $this->getCardHumanReadableValue(array_values($cards)[0]),
+        'i18n' => array('card_count'),
+      )
+    );
   }
 
   function getDiscardedCards()
@@ -357,6 +380,25 @@ class Guibole extends Table
 
     if ($card['location'] == self::DECK) {
       $this->notifyFirstCardInDeck();
+
+      $this->notifyAllPlayers(
+        'message',
+        _('${player_name} took a card from the deck'),
+        array(
+          'player_id' => $this->getActivePlayerId(),
+          'player_name' => $this->getActivePlayerName(),
+        )
+      );
+    } else {
+      $this->notifyAllPlayers(
+        'message',
+        _('${player_name} took a ${card_value} from the discard'),
+        array(
+          'player_id' => $this->getActivePlayerId(),
+          'player_name' => $this->getActivePlayerName(),
+          'card_value' => $this->getCardHumanReadableValue($card),
+        )
+      );
     }
 
     $this->notifyPlayerAboutHisHand($current_player_id);
@@ -452,5 +494,19 @@ class Guibole extends Table
     foreach ($players as $player_id => $player) {
       $this->notifyPlayerAboutHisHand($player_id);
     }
+  }
+
+  function getCardHumanReadableValue($card)
+  {
+    if ($card['type_arg'] == 1)
+      return 'A';
+    if ($card['type_arg'] == 11)
+      return 'J';
+    if ($card['type_arg'] == 12)
+      return 'Q';
+    if ($card['type_arg'] == 13)
+      return 'K';
+
+    return $card['type_arg'];
   }
 }
