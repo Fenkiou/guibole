@@ -37,13 +37,13 @@ $gameinfos = array(
   'bgg_id' => 0,
 
   // Players configuration that can be played (ex: 2 to 4 players)
-  'players' => array(2, 3, 4, 5),
+  'players' => array(2, 3, 4, 5, 6),
 
   // Suggest players to play with this number of players. Must be null if there is no such advice, or if there is only one possible player configuration.
   'suggest_player_number' => null,
 
   // Discourage players to play with these numbers of players. Must be null if there is no such advice.
-  'not_recommend_player_number' => array(2),
+  'not_recommend_player_number' => array(2, 6),
   // 'not_recommend_player_number' => array( 2, 3 ),      // <= example: this is not recommended to play this game with 2 or 3 players
 
 
@@ -92,7 +92,7 @@ $gameinfos = array(
   'luck' => 3,
 
   // Strategy of the game, from 0 (no strategy can be setup) to 5 (totally based on strategy)
-  'strategy' => 3,
+  'strategy' => 2,
 
   // Diplomacy of the game, from 0 (no interaction in this game) to 5 (totally based on interaction and discussion between players)
   'diplomacy' => 0,
