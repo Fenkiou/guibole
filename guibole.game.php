@@ -345,9 +345,31 @@ class Guibole extends Table
 
   function getFirstCardInDeck()
   {
-    # Take everything except the last card of the discard
-    # put that in the deck and shuffle it
-    return $this->cards->getCardOnTop(self::DECK);
+    $card = $this->cards->getCardOnTop(self::DECK);
+
+    /*
+     * In case the deck is empty, move all discarded card except the last one
+     * to the deck and shuffle it
+     */
+    if (!$card) {
+      $last_discarded_card = $this->cards->getCardOnTop(self::TMP_DISCARD);
+
+      $this->cards->moveAllCardsInLocation(self::TMP_DISCARD, self::DECK);
+      $this->cards->moveAllCardsInLocation(self::DISCARD, self::DECK);
+      $this->cards->shuffle(self::DECK);
+
+      $this->cards->moveCard($last_discarded_card['id'], self::TMP_DISCARD);
+
+      $this->notifyAllPlayers(
+        'message',
+        _('Shuffling discarded cards and refilling the deck'),
+        array()
+      );
+
+      return $this->getFirstCardInDeck();
+    }
+
+    return $card;
   }
 
   function getCards($card_ids)
