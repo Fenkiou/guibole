@@ -37,7 +37,7 @@ class action_guibole extends APP_GameAction
   {
     self::trace("drawCard");
     self::setAjaxMode();
-    $card_id = self::getArg("id", AT_posint, true);
+    $card_id = self::getArg("id", AT_posint);
     $this->game->drawCard($card_id);
     self::ajaxResponse();
   }

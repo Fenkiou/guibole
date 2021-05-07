@@ -94,7 +94,6 @@ class Guibole extends Table
 
     $result[self::HAND] = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
-    $result['first_card_in_deck'] = $this->getFirstCardInDeck();
     $result[self::DISCARD] = $this->getDiscardedCards();
     $result[self::DRAWED_CARDS] = $this->getDrawedCards();
 
@@ -113,7 +112,6 @@ class Guibole extends Table
     $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
     $this->setDiscardedCards($cards);
     $this->setShowedCards(array());
-    $this->notifyFirstCardInDeck();
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
     $this->gamestate->nextState("playCardsOrEndRoundState");
@@ -166,6 +164,7 @@ class Guibole extends Table
     $drawed_cards = $this->getDrawedCards();
     $this->setDiscardedCards($drawed_cards);
     $this->setDrawedCards(array());
+
     $this->notifyAllPlayersAboutCurrentPlayerCardsCount();
 
     $this->gamestate->nextState("activateNextPlayerState");
@@ -351,13 +350,6 @@ class Guibole extends Table
     return $this->cards->getCardOnTop(self::DECK);
   }
 
-  function notifyFirstCardInDeck()
-  {
-    $this->notifyAllPlayers('setFirstCardInDeck', '', array(
-      'card' => $this->getFirstCardInDeck()
-    ));
-  }
-
   function getCards($card_ids)
   {
     return $this->cards->getCards($card_ids);
@@ -372,7 +364,11 @@ class Guibole extends Table
   {
     $this->ensureCurrentPlayer();
 
-    $card = $this->cards->getCard($card_id);
+    if (!$card_id) {
+      $card = $this->getFirstCardInDeck();
+    } else {
+      $card = $this->cards->getCard($card_id);
+    }
 
     if (!$card)
       throw new feException(self::_("This card does not exists"));
@@ -381,11 +377,9 @@ class Guibole extends Table
       throw new feException(self::_("This card cannot be taken"));
 
     $current_player_id = $this->getCurrentPlayerId();
-    $this->cards->moveCard($card_id, self::HAND, $current_player_id);
+    $this->cards->moveCard($card['id'], self::HAND, $current_player_id);
 
     if ($card['location'] == self::DECK) {
-      $this->notifyFirstCardInDeck();
-
       $this->notifyAllPlayers(
         'message',
         _('${player_name} took a card from the deck'),

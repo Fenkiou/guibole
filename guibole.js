@@ -35,6 +35,12 @@ define([
       this.deck.image_items_per_row = 1;
       this.deck.centerItems = true;
       this.deck.extraClasses = "guibole_card";
+      this.deck.addItemType(
+        null,
+        null,
+        g_gamethemeurl + "img/card_back.jpg",
+        null
+      );
 
       this.discard = new ebg.stock();
       this.discard.create(this, $("discard"), this.cardwidth, this.cardheight);
@@ -81,12 +87,6 @@ define([
             g_gamethemeurl + "img/cards.jpg",
             card_position
           );
-          this.deck.addItemType(
-            card_position,
-            value,
-            g_gamethemeurl + "img/card_back.jpg",
-            card_position
-          );
           this.discard.addItemType(
             card_position,
             value,
@@ -115,11 +115,7 @@ define([
         this.getObjectsFromDatabaseObject(gamedatas.drawed_cards)
       );
 
-      var card = gamedatas.first_card_in_deck;
-      var color = card.type;
-      var value = card.type_arg;
-
-      this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
+      this.deck.addToStock(null);
 
       this.drawed_cards.setSelectionMode(0);
 
@@ -202,7 +198,6 @@ define([
       dojo.subscribe("newHand", this, "newHand");
       dojo.subscribe("discardedCards", this, "discardedCards");
       dojo.subscribe("drawedCards", this, "drawedCards");
-      dojo.subscribe("setFirstCardInDeck", this, "setFirstCardInDeck");
       dojo.subscribe("updateScore", this, "updateScore");
       //this.notifqueue.setSynchronous("updateScore", 5000);
 
@@ -287,19 +282,6 @@ define([
           card.id
         );
       }
-    },
-
-    setFirstCardInDeck: function (notification) {
-      console.debug("Entering setFirstCardInDeck");
-
-      this.deck.removeAll();
-
-      var card = notification.args.card;
-      var color = card.type;
-      var value = card.type_arg;
-      this.deck.addToStockWithId(this.getCardPosition(color, value), card.id);
-
-      console.debug("Leaving setFirstCardInDeck");
     },
 
     updateScore: function (notification) {
@@ -406,9 +388,6 @@ define([
         card_ids += card.id + ";";
       }
 
-      console.log("played", card_ids);
-      // TODO: Checks cards are have same value
-
       this.ajaxcall(
         "/guibole/guibole/playCards.html",
         {
@@ -421,8 +400,6 @@ define([
       );
 
       this.player_hand.unselectAll();
-      this.deck.unselectAll();
-      this.discard.unselectAll();
     },
 
     drawCard: function () {
@@ -431,11 +408,11 @@ define([
         return;
       }
 
-      var card = null;
+      var card_id = null;
       if (this.deck.getSelectedItems().length === 1) {
-        card = this.deck.getSelectedItems()[0];
+        card_id = null;
       } else if (this.discard.getSelectedItems().length === 1) {
-        card = this.discard.getSelectedItems()[0];
+        card_id = this.discard.getSelectedItems()[0].id;
       } else {
         this.showMessage(_("You must take a card"), "error");
         return;
@@ -444,7 +421,7 @@ define([
       this.ajaxcall(
         "/guibole/guibole/drawCard.html",
         {
-          id: card.id,
+          id: card_id,
           lock: true,
         },
         this,
