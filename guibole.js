@@ -261,7 +261,8 @@ define([
 
     drawedCards: function (notification) {
       this.setDrawedCards(
-        this.getObjectsFromDatabaseObject(notification.args.cards)
+        this.getObjectsFromDatabaseObject(notification.args.cards),
+        notification.args.player_id
       );
     },
 
@@ -271,16 +272,32 @@ define([
       );
     },
 
-    setDrawedCards: function (cards) {
+    setDrawedCards: function (cards, player_id) {
       this.drawed_cards.removeAll();
 
       for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
-        this.drawed_cards.addToStockWithId(
-          this.getCardPosition(color, value),
-          card.id
-        );
+
+        if (!player_id) {
+          this.drawed_cards.addToStockWithId(
+            this.getCardPosition(color, value),
+            card.id
+          );
+        } else if (this.player_id === parseInt(player_id)) {
+          this.drawed_cards.addToStockWithId(
+            this.getCardPosition(color, value),
+            card.id,
+            "player_hand_item_" + card.id
+          );
+          this.player_hand.removeFromStockById(card.id);
+        } else {
+          this.drawed_cards.addToStockWithId(
+            this.getCardPosition(color, value),
+            card.id,
+            "player_board_" + player_id
+          );
+        }
       }
     },
 

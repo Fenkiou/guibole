@@ -147,13 +147,6 @@ class Guibole extends Table
 
     $this->setDrawedCards($cards);
 
-    $cards = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
-
-    // Notify player about his cards
-    $this->notifyPlayer($current_player_id, 'newHand', '', array(
-      'cards' => $cards
-    ));
-
     $this->gamestate->nextState("drawCardState");
   }
 
@@ -293,10 +286,10 @@ class Guibole extends Table
 
     // Notify all other players about the discarded cards
     $this->notifyAllPlayers('drawedCards', '', array(
-      'cards' => $cards
+      'cards' => $cards,
+      'player_id' => $this->getActivePlayerId()
     ));
 
-    // 
     if (!count($cards))
       return;
 
