@@ -3,6 +3,20 @@
 require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 
 
+function getCardHumanReadableValue($card)
+{
+  if ($card['type_arg'] == 1)
+    return 'A';
+  if ($card['type_arg'] == 11)
+    return 'J';
+  if ($card['type_arg'] == 12)
+    return 'Q';
+  if ($card['type_arg'] == 13)
+    return 'K';
+
+  return $card['type_arg'];
+}
+
 class Guibole extends Table
 {
   const DECK = 'deck';
@@ -111,6 +125,15 @@ class Guibole extends Table
 
     $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
     $this->setDiscardedCards($cards);
+
+    $this->notifyAllPlayers(
+      'message',
+      self::_('The dealer draws a ${card_value} and discards it'),
+      array(
+        'card_value' => getCardHumanReadableValue($cards[0]),
+      )
+    );
+
     $this->setShowedCards(array());
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
@@ -119,7 +142,7 @@ class Guibole extends Table
 
   function playCards($card_ids)
   {
-    $current_player_id = $this->getCurrentPlayerId();
+    $current_player_id = $this->getActivePlayerId();
 
     $cards = $this->getCards($card_ids);
 
@@ -175,7 +198,8 @@ class Guibole extends Table
   {
     $this->ensureCurrentPlayer();
 
-    $current_player_id = $this->getCurrentPlayerId();
+    $current_player_id = $this->getActivePlayerId();
+    $current_player_name = $this->getActivePlayerName();
     $current_player_hand_points = $this->getHandPointsForPlayerId($current_player_id);
 
     $players_with_points = array();
@@ -198,6 +222,65 @@ class Guibole extends Table
         } else {
           $players_with_points[$player_id] = $player_hand_points;
         }
+      }
+    }
+
+    // Announcing cards and score of player who showed his cards
+    if (isset($players_with_points[$current_player_id])) {
+      $message = self::_('${player_name} shows: ${card_values} and loose ${hand_point} points');
+      $points = $players_with_points[$current_player_id];
+    } else {
+      $message = self::_('${player_name} shows: ${card_values} and do not loose point');
+      $points = 0;
+    }
+    $this->notifyAllPlayers(
+      'message',
+      $message,
+      array(
+        'player_name' => $current_player_name,
+        'card_values' => join(
+          ', ',
+          array_map(
+            'getCardHumanReadableValue',
+            array_values($this->getPlayerCards($current_player_id))
+          )
+        ),
+        'hand_point' => $points
+      )
+    );
+
+    if (
+      count($players_with_points) > 1
+      || (count($players_with_points) == 1
+        && !isset($players_with_points[$current_player_id]))
+    ) {
+      // For each other player, announce their cards and score they take
+      foreach ($players as $player_id => $player) {
+        if ($player_id == $current_player_id)
+          continue;
+
+        if (isset($players_with_points[$player_id])) {
+          $message = self::_('${player_name} have: ${card_values} and loose ${hand_point} points');
+        } else {
+          $message = self::_('${player_name} have: ${card_values} and counter ${current_player_name}');
+        }
+
+        $this->notifyAllPlayers(
+          'message',
+          $message,
+          array(
+            'player_name' => $player['player_name'],
+            'card_values' => join(
+              ', ',
+              array_map(
+                'getCardHumanReadableValue',
+                array_values($this->getPlayerCards($player_id))
+              )
+            ),
+            'hand_point' => $this->getHandPointsForPlayerId($player_id),
+            'current_player_name' => $current_player_name
+          )
+        );
       }
     }
 
@@ -293,23 +376,19 @@ class Guibole extends Table
     if (!count($cards))
       return;
 
-    $card_count = _('one');
-    if (count($cards) == 2)
-      $card_count = _('two');
-    if (count($cards) == 3)
-      $card_count = _('three');
-    if (count($cards) == 4)
-      $card_count = _('four');
-
     $this->notifyAllPlayers(
       'message',
-      _('${player_name} played ${card_count} ${card_value}'),
+      self::_('${player_name} plays: ${card_values}'),
       array(
         'player_id' => $this->getActivePlayerId(),
         'player_name' => $this->getActivePlayerName(),
-        'card_count' => $card_count,
-        'card_value' => $this->getCardHumanReadableValue(array_values($cards)[0]),
-        'i18n' => array('card_count'),
+        'card_values' => join(
+          ', ',
+          array_map(
+            'getCardHumanReadableValue',
+            array_values($cards)
+          )
+        ),
       )
     );
   }
@@ -391,29 +470,22 @@ class Guibole extends Table
     if ($card['location'] != self::DECK && $card['location'] != self::TMP_DISCARD)
       throw new feException(self::_("This card cannot be taken"));
 
-    $current_player_id = $this->getCurrentPlayerId();
+    $current_player_id = $this->getActivePlayerId();
     $this->cards->moveCard($card['id'], self::HAND, $current_player_id);
 
     if ($card['location'] == self::DECK) {
-      $this->notifyAllPlayers(
-        'message',
-        _('${player_name} took a card from the deck'),
-        array(
-          'player_id' => $this->getActivePlayerId(),
-          'player_name' => $this->getActivePlayerName(),
-        )
-      );
+      $message = self::_('${player_name} takes a card from the deck');
     } else {
-      $this->notifyAllPlayers(
-        'message',
-        _('${player_name} took a ${card_value} from the discard'),
-        array(
-          'player_id' => $this->getActivePlayerId(),
-          'player_name' => $this->getActivePlayerName(),
-          'card_value' => $this->getCardHumanReadableValue($card),
-        )
-      );
+      $message = self::_('${player_name} takes a card from the discard');
     }
+
+    $this->notifyAllPlayers(
+      'message',
+      $message,
+      array(
+        'player_name' => $this->getActivePlayerName(),
+      )
+    );
 
     $this->notifyPlayerAboutHisHand($current_player_id);
   }
@@ -442,9 +514,19 @@ class Guibole extends Table
     }
   }
 
+  function getPlayerCards($player_id)
+  {
+    return $this->cards->getCardsInLocation(self::HAND, $player_id);
+  }
+
+  function getPlayerCardsCount($player_id)
+  {
+    return count($this->getPlayerCards($player_id));
+  }
+
   function getHandPointsForPlayerId($player_id)
   {
-    $cards = $this->cards->getCardsInLocation(self::HAND, $player_id);
+    $cards = $this->getPlayerCards($player_id);
     $points = 0;
 
     foreach ($cards as $card)
@@ -474,11 +556,6 @@ class Guibole extends Table
     return $players;
   }
 
-  function getPlayerCardsCount($player_id)
-  {
-    return count($this->cards->getCardsInLocation(self::HAND, $player_id));
-  }
-
   function notifyPlayersAboutScores($showedCards)
   {
     $this->notifyAllPlayers('updateScore', '', array(
@@ -489,7 +566,7 @@ class Guibole extends Table
 
   function notifyAllPlayersAboutCurrentPlayerCardsCount()
   {
-    $player_id = $this->getCurrentPlayerId();
+    $player_id = $this->getActivePlayerId();
     $this->notifyAllPlayers('currentPlayerCardsCountUpdate', '', array(
       'player' => array("id" => $player_id, "cards_count" => $this->getPlayerCardsCount($player_id))
     ));
@@ -508,19 +585,5 @@ class Guibole extends Table
     foreach ($players as $player_id => $player) {
       $this->notifyPlayerAboutHisHand($player_id);
     }
-  }
-
-  function getCardHumanReadableValue($card)
-  {
-    if ($card['type_arg'] == 1)
-      return 'A';
-    if ($card['type_arg'] == 11)
-      return 'J';
-    if ($card['type_arg'] == 12)
-      return 'Q';
-    if ($card['type_arg'] == 13)
-      return 'K';
-
-    return $card['type_arg'];
   }
 }

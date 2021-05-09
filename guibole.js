@@ -199,7 +199,7 @@ define([
       dojo.subscribe("discardedCards", this, "discardedCards");
       dojo.subscribe("drawedCards", this, "drawedCards");
       dojo.subscribe("updateScore", this, "updateScore");
-      //this.notifqueue.setSynchronous("updateScore", 5000);
+      this.notifqueue.setSynchronous("updateScore", 5000);
 
       dojo.subscribe(
         "currentPlayerCardsCountUpdate",
