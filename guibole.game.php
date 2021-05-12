@@ -204,8 +204,11 @@ class Guibole extends Table
 
     $players_with_points = array();
 
+    $eliminating_hand = false;
+
     if ($current_player_hand_points > 10) {
       $players_with_points[$current_player_id] = 45;
+      $eliminating_hand = true;
     }
 
     $players = $this->loadPlayersBasicInfos();
@@ -249,39 +252,34 @@ class Guibole extends Table
       )
     );
 
-    if (
-      count($players_with_points) > 1
-      || (count($players_with_points) == 1
-        && !isset($players_with_points[$current_player_id]))
-    ) {
-      // For each other player, announce their cards and score they take
-      foreach ($players as $player_id => $player) {
-        if ($player_id == $current_player_id)
-          continue;
+    foreach ($players as $player_id => $player) {
+      if ($player_id == $current_player_id)
+        continue;
 
-        if (isset($players_with_points[$player_id])) {
-          $message = clienttranslate('${player_name} have: ${card_values} and loose ${hand_point} points');
-        } else {
-          $message = clienttranslate('${player_name} have: ${card_values} and counter ${current_player_name}');
-        }
-
-        $this->notifyAllPlayers(
-          'message',
-          $message,
-          array(
-            'player_name' => $player['player_name'],
-            'card_values' => join(
-              ', ',
-              array_map(
-                'getCardHumanReadableValue',
-                array_values($this->getPlayerCards($player_id))
-              )
-            ),
-            'hand_point' => $this->getHandPointsForPlayerId($player_id),
-            'current_player_name' => $current_player_name
-          )
-        );
+      if (isset($players_with_points[$player_id])) {
+        $message = clienttranslate('${player_name} have: ${card_values} and loose ${hand_point} points');
+      } else if ($eliminating_hand) {
+        $message = clienttranslate('${player_name} have: ${card_values} and do not loose points');
+      } else {
+        $message = clienttranslate('${player_name} have: ${card_values} and counter ${current_player_name}');
       }
+
+      $this->notifyAllPlayers(
+        'message',
+        $message,
+        array(
+          'player_name' => $player['player_name'],
+          'card_values' => join(
+            ', ',
+            array_map(
+              'getCardHumanReadableValue',
+              array_values($this->getPlayerCards($player_id))
+            )
+          ),
+          'hand_point' => $this->getHandPointsForPlayerId($player_id),
+          'current_player_name' => $current_player_name
+        )
+      );
     }
 
     foreach ($players_with_points as $player_id => $player_points) {
@@ -290,7 +288,7 @@ class Guibole extends Table
 
     $this->notifyPlayersAboutScores($this->cards->getCardsInLocation(self::HAND, $current_player_id));
 
-    $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getActivePlayerId()));
+    $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getGameStateValue("startingPlayerId")));
     $this->gamestate->nextState("endRoundState");
   }
 
