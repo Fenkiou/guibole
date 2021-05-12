@@ -55,6 +55,6 @@ class view_guibole_guibole extends game_view
     //  ));
     //}
 
-    $this->tpl['MY_HAND'] = self::_("My hand");
+    //$this->tpl['MY_HAND'] = self::_("My hand");
   }
 }

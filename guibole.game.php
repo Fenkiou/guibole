@@ -128,7 +128,7 @@ class Guibole extends Table
 
     $this->notifyAllPlayers(
       'message',
-      self::_('The dealer draws a ${card_value} and discards it'),
+      clienttranslate('The dealer draws a ${card_value} and discards it'),
       array(
         'card_value' => getCardHumanReadableValue($cards[0]),
       )
@@ -147,13 +147,13 @@ class Guibole extends Table
     $cards = $this->getCards($card_ids);
 
     if (count($cards) != count($card_ids))
-      throw new feException(self::_("Some of these cards don't exist"));
+      throw new feException(clienttranslate("Some of these cards don't exist"));
 
     $card_values = array();
 
     foreach ($cards as $card) {
       if ($card['location'] != self::HAND || $card['location_arg'] != $current_player_id)
-        throw new feException(self::_("Some of these cards are not in your hand"));
+        throw new feException(clienttranslate("Some of these cards are not in your hand"));
 
       if (!count($card_values)) {
         array_push($card_values, $this->getCardValue($card));
@@ -161,7 +161,7 @@ class Guibole extends Table
       }
 
       if (!in_array($this->getCardValue($card), $card_values)) {
-        throw new feException(self::_("You can only play multiple card of same value"));
+        throw new feException(clienttranslate("You can only play multiple card of same value"));
       }
     }
 
@@ -227,10 +227,10 @@ class Guibole extends Table
 
     // Announcing cards and score of player who showed his cards
     if (isset($players_with_points[$current_player_id])) {
-      $message = self::_('${player_name} shows: ${card_values} and loose ${hand_point} points');
+      $message = clienttranslate('${player_name} shows: ${card_values} and loose ${hand_point} points');
       $points = $players_with_points[$current_player_id];
     } else {
-      $message = self::_('${player_name} shows: ${card_values} and do not loose point');
+      $message = clienttranslate('${player_name} shows: ${card_values} and do not loose point');
       $points = 0;
     }
     $this->notifyAllPlayers(
@@ -260,9 +260,9 @@ class Guibole extends Table
           continue;
 
         if (isset($players_with_points[$player_id])) {
-          $message = self::_('${player_name} have: ${card_values} and loose ${hand_point} points');
+          $message = clienttranslate('${player_name} have: ${card_values} and loose ${hand_point} points');
         } else {
-          $message = self::_('${player_name} have: ${card_values} and counter ${current_player_name}');
+          $message = clienttranslate('${player_name} have: ${card_values} and counter ${current_player_name}');
         }
 
         $this->notifyAllPlayers(
@@ -378,7 +378,7 @@ class Guibole extends Table
 
     $this->notifyAllPlayers(
       'message',
-      self::_('${player_name} plays: ${card_values}'),
+      clienttranslate('${player_name} plays: ${card_values}'),
       array(
         'player_id' => $this->getActivePlayerId(),
         'player_name' => $this->getActivePlayerName(),
@@ -434,7 +434,7 @@ class Guibole extends Table
 
       $this->notifyAllPlayers(
         'message',
-        _('Shuffling discarded cards and refilling the deck'),
+        clienttranslate('Shuffling discarded cards and refilling the deck'),
         array()
       );
 
@@ -465,18 +465,18 @@ class Guibole extends Table
     }
 
     if (!$card)
-      throw new feException(self::_("This card does not exists"));
+      throw new feException(clienttranslate("This card does not exists"));
 
     if ($card['location'] != self::DECK && $card['location'] != self::TMP_DISCARD)
-      throw new feException(self::_("This card cannot be taken"));
+      throw new feException(clienttranslate("This card cannot be taken"));
 
     $current_player_id = $this->getActivePlayerId();
     $this->cards->moveCard($card['id'], self::HAND, $current_player_id);
 
     if ($card['location'] == self::DECK) {
-      $message = self::_('${player_name} takes a card from the deck');
+      $message = clienttranslate('${player_name} takes a card from the deck');
     } else {
-      $message = self::_('${player_name} takes a card from the discard');
+      $message = clienttranslate('${player_name} takes a card from the discard');
     }
 
     $this->notifyAllPlayers(
@@ -510,7 +510,7 @@ class Guibole extends Table
   function ensureCurrentPlayer()
   {
     if ($this->getActivePlayerId() != $this->getCurrentPlayerId()) {
-      throw new feException(self::_("This is not your turn."));
+      throw new feException(clienttranslate("This is not your turn."));
     }
   }
 
