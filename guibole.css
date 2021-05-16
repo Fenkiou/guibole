@@ -12,10 +12,6 @@
   background-color: green;
 }
 
-#card_mat .guibole_card {
-  top: 5px !important;
-}
-
 #deck {
   height: 107px !important;
 }
@@ -30,8 +26,4 @@
 
 #player_hand {
   height: 100px;
-}
-
-#player_hand .guibole_card {
-  top: 11px !important;
 }

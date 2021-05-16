@@ -10,7 +10,7 @@ define([
       this.player_hand = null;
       this.discard = null;
       this.deck = null;
-      this.drawed_cards = null;
+      this.played_cards = null;
 
       this.cardwidth = 70;
       this.cardheight = 96;
@@ -35,12 +35,6 @@ define([
       this.deck.image_items_per_row = 1;
       this.deck.centerItems = true;
       this.deck.extraClasses = "guibole_card";
-      this.deck.addItemType(
-        null,
-        null,
-        g_gamethemeurl + "img/card_back.jpg",
-        null
-      );
 
       this.discard = new ebg.stock();
       this.discard.create(this, $("discard"), this.cardwidth, this.cardheight);
@@ -48,16 +42,16 @@ define([
       this.discard.centerItems = true;
       this.discard.extraClasses = "guibole_card";
 
-      this.drawed_cards = new ebg.stock();
-      this.drawed_cards.create(
+      this.played_cards = new ebg.stock();
+      this.played_cards.create(
         this,
-        $("drawed_cards"),
+        $("played_cards"),
         this.cardwidth,
         this.cardheight
       );
-      this.drawed_cards.image_items_per_row = 13;
-      this.drawed_cards.centerItems = true;
-      this.drawed_cards.extraClasses = "guibole_card";
+      this.played_cards.image_items_per_row = 13;
+      this.played_cards.centerItems = true;
+      this.played_cards.extraClasses = "guibole_card";
 
       dojo.connect(
         this.player_hand,
@@ -71,7 +65,7 @@ define([
         this.discard,
         "onChangeSelection",
         this,
-        "drawedCardsSelected"
+        "discardedCardsSelected"
       );
 
       // Create cards types:
@@ -93,12 +87,22 @@ define([
             g_gamethemeurl + "img/cards.jpg",
             card_position
           );
-          this.drawed_cards.addItemType(
+          this.played_cards.addItemType(
             card_position,
             value,
             g_gamethemeurl + "img/cards.jpg",
             card_position
           );
+          this.deck.addItemType(
+            card_position,
+            value,
+            g_gamethemeurl + "img/card_back.jpg",
+            card_position
+          );
+
+          if (value === 1 && color === 1) {
+            this.deck.addToStockWithId(this.getCardPosition(color, value), 404);
+          }
         }
       }
 
@@ -107,17 +111,16 @@ define([
 
       // Discarded cards
       this.setDiscardedCards(
-        this.getObjectsFromDatabaseObject(gamedatas.discard)
+        this.getObjectsFromDatabaseObject(gamedatas.discard),
+        null
       );
 
-      // Drawed cards
-      this.setDrawedCards(
-        this.getObjectsFromDatabaseObject(gamedatas.drawed_cards)
+      // Played cards
+      this.setPlayedCards(
+        this.getObjectsFromDatabaseObject(gamedatas.played_cards)
       );
 
-      this.deck.addToStock(null);
-
-      this.drawed_cards.setSelectionMode(0);
+      this.played_cards.setSelectionMode(0);
 
       this.setupNotifications();
 
@@ -197,7 +200,8 @@ define([
 
       dojo.subscribe("newHand", this, "newHand");
       dojo.subscribe("discardedCards", this, "discardedCards");
-      dojo.subscribe("drawedCards", this, "drawedCards");
+      dojo.subscribe("playedCards", this, "playedCards");
+      dojo.subscribe("cardTaken", this, "cardTaken");
       dojo.subscribe("updateScore", this, "updateScore");
       this.notifqueue.setSynchronous("updateScore", 5000);
 
@@ -206,7 +210,6 @@ define([
         this,
         "currentPlayerCardsCountUpdate"
       );
-      dojo.subscribe("showedCards", this, "showedCards");
 
       console.debug("Leaving setupNotifications");
     },
@@ -242,57 +245,67 @@ define([
 
     discardedCards: function (notification) {
       this.setDiscardedCards(
-        this.getObjectsFromDatabaseObject(notification.args.cards)
+        this.getObjectsFromDatabaseObject(notification.args.cards),
+        notification.args.from
       );
     },
 
-    setDiscardedCards: function (cards) {
-      this.discard.removeAll();
+    setDiscardedCards: function (cards, from) {
+      console.debug("Entering setDiscardedCards");
+
+      for (const card of this.discard.getAllItems()) {
+        this.discard.removeFromStockById(card.id);
+      }
 
       for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
-        this.discard.addToStockWithId(
-          this.getCardPosition(color, value),
-          card.id
-        );
+
+        if (from === "played_cards") {
+          this.discard.addToStockWithId(
+            this.getCardPosition(color, value),
+            card.id,
+            from
+          );
+          this.played_cards.removeFromStockById(card.id);
+        } else {
+          this.discard.addToStockWithId(
+            this.getCardPosition(color, value),
+            card.id
+          );
+        }
       }
+      console.debug("Leaving setDiscardedCards");
     },
 
-    drawedCards: function (notification) {
-      this.setDrawedCards(
+    playedCards: function (notification) {
+      this.setPlayedCards(
         this.getObjectsFromDatabaseObject(notification.args.cards),
         notification.args.player_id
       );
     },
 
-    showedCards: function (notification) {
-      this.setDrawedCards(
-        this.getObjectsFromDatabaseObject(notification.args.cards)
-      );
-    },
-
-    setDrawedCards: function (cards, player_id) {
-      this.drawed_cards.removeAll();
+    setPlayedCards: function (cards, player_id) {
+      this.played_cards.removeAll();
 
       for (const card of cards) {
         var color = card.type;
         var value = card.type_arg;
 
         if (!player_id) {
-          this.drawed_cards.addToStockWithId(
+          this.played_cards.addToStockWithId(
             this.getCardPosition(color, value),
             card.id
           );
         } else if (this.player_id === parseInt(player_id)) {
-          this.drawed_cards.addToStockWithId(
+          this.played_cards.addToStockWithId(
             this.getCardPosition(color, value),
             card.id,
             "player_hand_item_" + card.id
           );
           this.player_hand.removeFromStockById(card.id);
         } else {
-          this.drawed_cards.addToStockWithId(
+          this.played_cards.addToStockWithId(
             this.getCardPosition(color, value),
             card.id,
             "player_board_" + player_id
@@ -301,11 +314,51 @@ define([
       }
     },
 
+    cardTaken: function (notification) {
+      card = notification.args.card;
+      from = notification.args.from;
+      to_player_id = parseInt(notification.args.to_player_id);
+
+      if (card) {
+        if (from === "deck") {
+          this.deck.addToStockWithId(
+            this.getCardPosition(card.type, card.type_arg),
+            card.id
+          );
+          this.player_hand.addToStockWithId(
+            this.getCardPosition(card.type, card.type_arg),
+            card.id,
+            "deck"
+          );
+          this.deck.removeFromStockById(card.id);
+        } else {
+          this.player_hand.addToStockWithId(
+            this.getCardPosition(card.type, card.type_arg),
+            card.id,
+            "discard_item_" + card.id
+          );
+        }
+        this.card_value_by_id[card.id] = card.type_arg;
+      } else if (to_player_id != this.player_id) {
+        if (from === "deck") {
+          this.deck.addToStockWithId(this.getCardPosition(1, 1), 405);
+          this.deck.removeFromStockById(405, "player_board_" + to_player_id);
+        } else {
+          const card = this.discard.getAllItems()[0];
+          const card_div = "discard_item_" + card.id;
+          this.placeOnObject(card_div, "discard");
+          this.slideToObject(card_div, "player_board_" + to_player_id).play();
+          this.discard.removeFromStockById(card.id);
+        }
+      }
+    },
+
     updateScore: function (notification) {
       console.debug("Entering updateScore");
 
-      this.setDrawedCards(
-        this.getObjectsFromDatabaseObject(notification.args.cards)
+      this.setPlayedCards(
+        this.getObjectsFromDatabaseObject(notification.args.cards),
+        notification.args.current_player_id
       );
 
       for (const player of this.getObjectsFromDatabaseObject(
@@ -321,7 +374,7 @@ define([
     currentPlayerCardsCountUpdate: function (notification) {
       console.debug("Entering currentPlayerCardsCountUpdate");
 
-      this.cards_in_hand[notification.args.player.id].setValue(
+      this.cards_in_hand[notification.args.player.id].toValue(
         notification.args.player.cards_count
       );
 
@@ -340,7 +393,7 @@ define([
 
     deckSelected: function () {
       /*
-       * Toggle selection of the drawed cards pile
+       * Toggle selection of the discarded cards pile
        */
       var cards = this.deck.getSelectedItems();
 
@@ -348,7 +401,7 @@ define([
         this.discard.unselectAll();
       }
     },
-    drawedCardsSelected: function () {
+    discardedCardsSelected: function () {
       /*
        * Toggle selection of the deck
        */

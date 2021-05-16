@@ -4,7 +4,7 @@
   <div id="card_mat">
     <div id="deck"></div>
     <div id="discard"></div>
-    <div id="drawed_cards"></div>
+    <div id="played_cards"></div>
   </div>
 </div>
 

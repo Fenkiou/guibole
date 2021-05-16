@@ -23,7 +23,7 @@ class Guibole extends Table
   const HAND = 'hand';
   const DISCARD = 'discard';
   const TMP_DISCARD = 'tmp_discard';
-  const DRAWED_CARDS = 'drawed_cards';
+  const PLAYED_CARDS = 'played_cards';
 
   function __construct()
   {
@@ -109,7 +109,7 @@ class Guibole extends Table
     $result[self::HAND] = $this->cards->getCardsInLocation(self::HAND, $current_player_id);
 
     $result[self::DISCARD] = $this->getDiscardedCards();
-    $result[self::DRAWED_CARDS] = $this->getDrawedCards();
+    $result[self::PLAYED_CARDS] = $this->getPlayedCards();
 
     $result['state_name'] = $this->gamestate->state()["name"];
 
@@ -124,7 +124,8 @@ class Guibole extends Table
     $this->dealCardsToPlayers();
 
     $cards = array($this->cards->pickCardForLocation(self::DECK, self::TMP_DISCARD));
-    $this->setDiscardedCards($cards);
+    $this->setDiscardedCards($cards, false);
+    $this->setPlayedCards(array());
 
     $this->notifyAllPlayers(
       'message',
@@ -133,8 +134,6 @@ class Guibole extends Table
         'card_value' => getCardHumanReadableValue($cards[0]),
       )
     );
-
-    $this->setShowedCards(array());
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
     $this->gamestate->nextState("playCardsOrEndRoundState");
@@ -165,10 +164,7 @@ class Guibole extends Table
       }
     }
 
-    foreach ($card_ids as $card_id)
-      $this->cards->playCard($card_id);
-
-    $this->setDrawedCards($cards);
+    $this->setPlayedCards($cards);
 
     $this->gamestate->nextState("drawCardState");
   }
@@ -177,9 +173,7 @@ class Guibole extends Table
   {
     $this->currentUserTakeCard($card_id);
 
-    $drawed_cards = $this->getDrawedCards();
-    $this->setDiscardedCards($drawed_cards);
-    $this->setDrawedCards(array());
+    $this->setDiscardedCards($this->getPlayedCards(), true);
 
     $this->notifyAllPlayersAboutCurrentPlayerCardsCount();
 
@@ -286,7 +280,10 @@ class Guibole extends Table
       $this->updateScoreForPlayer($player_id, $player_points);
     }
 
-    $this->notifyPlayersAboutScores($this->cards->getCardsInLocation(self::HAND, $current_player_id));
+    $this->notifyPlayersAboutScores(
+      $this->cards->getCardsInLocation(self::HAND, $current_player_id),
+      $current_player_id
+    );
 
     $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getGameStateValue("startingPlayerId")));
     $this->gamestate->nextState("endRoundState");
@@ -356,17 +353,16 @@ class Guibole extends Table
   /*
    * Utils
    */
-  function getDrawedCards()
+  function getPlayedCards()
   {
-    return $this->cards->getCardsInLocation(self::DRAWED_CARDS);
+    return $this->cards->getCardsInLocation(self::PLAYED_CARDS);
   }
 
-  function setDrawedCards($cards)
+  function setPlayedCards($cards)
   {
-    $this->cards->moveCards($this->getCardIds($cards), self::DRAWED_CARDS);
+    $this->cards->moveCards($this->getCardIds($cards), self::PLAYED_CARDS);
 
-    // Notify all other players about the discarded cards
-    $this->notifyAllPlayers('drawedCards', '', array(
+    $this->notifyAllPlayers('playedCards', '', array(
       'cards' => $cards,
       'player_id' => $this->getActivePlayerId()
     ));
@@ -396,20 +392,19 @@ class Guibole extends Table
     return $this->cards->getCardsInLocation(self::TMP_DISCARD);
   }
 
-  function setDiscardedCards($cards)
+  function setDiscardedCards($cards, $reset_played_cards)
   {
     $this->cards->moveAllCardsInLocation(self::TMP_DISCARD, self::DISCARD);
     $this->cards->moveCards($this->getCardIds($cards), self::TMP_DISCARD);
 
-    $this->notifyAllPlayers('discardedCards', '', array(
-      'cards' => $cards
-    ));
-  }
+    $from = self::DECK;
+    if ($reset_played_cards) {
+      $from = self::PLAYED_CARDS;
+    }
 
-  function setShowedCards($cards)
-  {
-    $this->notifyAllPlayers('showedCards', '', array(
+    $this->notifyAllPlayers('discardedCards', '', array(
       'cards' => $cards,
+      'from' => $from
     ));
   }
 
@@ -485,7 +480,17 @@ class Guibole extends Table
       )
     );
 
-    $this->notifyPlayerAboutHisHand($current_player_id);
+    $this->notifyPlayer($current_player_id, 'cardTaken', '', array(
+      'card' => $card,
+      'from' => $card['location'],
+      'to_player_id' => $current_player_id
+    ));
+
+    $this->notifyAllPlayers('cardTaken', '', array(
+      'card' => null,
+      'from' => $card['location'],
+      'to_player_id' => $current_player_id
+    ));
   }
 
   function notifyPlayerAboutHisHand($player_id)
@@ -554,11 +559,12 @@ class Guibole extends Table
     return $players;
   }
 
-  function notifyPlayersAboutScores($showedCards)
+  function notifyPlayersAboutScores($showedCards, $current_player_id)
   {
     $this->notifyAllPlayers('updateScore', '', array(
       'players' => $this->getPlayersData(),
-      'cards' => $showedCards
+      'cards' => $showedCards,
+      'current_player_id' => $current_player_id
     ));
   }
 
