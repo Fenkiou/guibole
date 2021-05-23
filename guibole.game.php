@@ -86,6 +86,12 @@ class Guibole extends Table
 
     $this->setGameStateInitialValue('startingPlayerId', $this->getActivePlayerId());
 
+    // Init statistics
+    $this->initStat("table", "rounds_count", 0);
+    $this->initStat("player", "ended_round_count", 0);
+    $this->initStat("player", "failed_round_count", 0);
+    $this->initStat("player", "counter_count", 0);
+
     /************ End of the game initialization *****/
   }
 
@@ -134,6 +140,8 @@ class Guibole extends Table
         'card_value' => getCardHumanReadableValue($cards[0]),
       )
     );
+
+    $this->incStat(1, "rounds_count");
 
     $this->gamestate->changeActivePlayer($this->getGameStateValue("startingPlayerId"));
     $this->gamestate->nextState("playCardsOrEndRoundState");
@@ -226,6 +234,7 @@ class Guibole extends Table
     if (isset($players_with_points[$current_player_id])) {
       $message = clienttranslate('${player_name} shows: ${card_values} and loose ${hand_point} points');
       $points = $players_with_points[$current_player_id];
+      $this->incStat(1, "failed_round_count", $current_player_id);
     } else {
       $message = clienttranslate('${player_name} shows: ${card_values} and do not loose point');
       $points = 0;
@@ -256,6 +265,7 @@ class Guibole extends Table
         $message = clienttranslate('${player_name} have: ${card_values} and do not loose points');
       } else {
         $message = clienttranslate('${player_name} have: ${card_values} and counter ${current_player_name}');
+        $this->incStat(1, "counter_count", $player_id);
       }
 
       $this->notifyAllPlayers(
@@ -284,6 +294,8 @@ class Guibole extends Table
       $this->cards->getCardsInLocation(self::HAND, $current_player_id),
       $current_player_id
     );
+
+    $this->incStat(1, "ended_round_count", $current_player_id);
 
     $this->setGameStateValue("startingPlayerId", $this->getPlayerAfter($this->getGameStateValue("startingPlayerId")));
     $this->gamestate->nextState("endRoundState");
