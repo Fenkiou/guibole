@@ -19,7 +19,7 @@ $gameinfos = array(
   'designer' => '',
 
   // Game artist (or game artists, separated by commas)
-  'artist' => '',
+  'artist' => 'SylvineD',
 
   // Year of FIRST publication of this game. Can be negative.
   'year' => 2021,
@@ -44,11 +44,9 @@ $gameinfos = array(
 
   // Discourage players to play with these numbers of players. Must be null if there is no such advice.
   'not_recommend_player_number' => array(2, 6),
-  // 'not_recommend_player_number' => array( 2, 3 ),      // <= example: this is not recommended to play this game with 2 or 3 players
-
 
   // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
-  'estimated_duration' => 30,
+  'estimated_duration' => 10,
 
   // Time in second add to a player when "giveExtraTime" is called (speed profile = fast)
   'fast_additional_time' => 30,
@@ -89,10 +87,10 @@ $gameinfos = array(
   'complexity' => 1,
 
   // Luck of the game, from 0 (absolutely no luck in this game) to 5 (totally luck driven)
-  'luck' => 3,
+  'luck' => 4,
 
   // Strategy of the game, from 0 (no strategy can be setup) to 5 (totally based on strategy)
-  'strategy' => 2,
+  'strategy' => 1,
 
   // Diplomacy of the game, from 0 (no interaction in this game) to 5 (totally based on interaction and discussion between players)
   'diplomacy' => 0,
