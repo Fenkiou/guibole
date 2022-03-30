@@ -232,11 +232,11 @@ class Guibole extends Table
 
     // Announcing cards and score of player who showed his cards
     if (isset($players_with_points[$current_player_id])) {
-      $message = clienttranslate('${player_name} shows: ${card_values} and loose ${hand_point} points');
+      $message = clienttranslate('${player_name} shows: ${card_values} and lose ${hand_point} points');
       $points = $players_with_points[$current_player_id];
       $this->incStat(1, "failed_round_count", $current_player_id);
     } else {
-      $message = clienttranslate('${player_name} shows: ${card_values} and do not loose point');
+      $message = clienttranslate('${player_name} shows: ${card_values} and do not lose point');
       $points = 0;
     }
     $this->notifyAllPlayers(
@@ -260,9 +260,9 @@ class Guibole extends Table
         continue;
 
       if (isset($players_with_points[$player_id])) {
-        $message = clienttranslate('${player_name} have: ${card_values} and loose ${hand_point} points');
+        $message = clienttranslate('${player_name} have: ${card_values} and lose ${hand_point} points');
       } else if ($eliminating_hand) {
-        $message = clienttranslate('${player_name} have: ${card_values} and do not loose points');
+        $message = clienttranslate('${player_name} have: ${card_values} and do not lose points');
       } else {
         $message = clienttranslate('${player_name} have: ${card_values} and counter ${current_player_name}');
         $this->incStat(1, "counter_count", $player_id);
