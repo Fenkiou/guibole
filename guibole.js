@@ -78,25 +78,25 @@ define([
           this.player_hand.addItemType(
             card_position,
             value,
-            g_gamethemeurl + "img/cards.jpg",
+            g_gamethemeurl + "img/cards.png",
             card_position
           );
           this.discard.addItemType(
             card_position,
             value,
-            g_gamethemeurl + "img/cards.jpg",
+            g_gamethemeurl + "img/cards.png",
             card_position
           );
           this.played_cards.addItemType(
             card_position,
             value,
-            g_gamethemeurl + "img/cards.jpg",
+            g_gamethemeurl + "img/cards.png",
             card_position
           );
           this.deck.addItemType(
             card_position,
             value,
-            g_gamethemeurl + "img/card_back.jpg",
+            g_gamethemeurl + "img/card_back.png",
             card_position
           );
 

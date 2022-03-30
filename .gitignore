@@ -2,3 +2,4 @@ dist/
 vendor/
 .hsftp
 bgaproject.yml
+composer.phar
