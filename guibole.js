@@ -102,6 +102,8 @@ define([
 
           if (value === 1 && color === 1) {
             this.deck.addToStockWithId(this.getCardPosition(color, value), 404);
+            this.attachToNewParent("deck_count", "deck_item_404");
+            this.placeOnObjectPos("deck_count", "deck_item_404", 25, 23);
           }
         }
       }
@@ -146,6 +148,11 @@ define([
           ""
         );
       }
+
+      $("deck_count").innerHTML = gamedatas.deck_count;
+      $("deck_count").style.backgroundColor = "white";
+      $("deck_count").style.textAlign = "center";
+      $("deck_count").style.width = "20px";
     },
 
     getCardPosition: function (color, value) {
@@ -203,6 +210,7 @@ define([
       dojo.subscribe("playedCards", this, "playedCards");
       dojo.subscribe("cardTaken", this, "cardTaken");
       dojo.subscribe("updateScore", this, "updateScore");
+      dojo.subscribe("deckCountUpdate", this, "updateDeckCount");
       this.notifqueue.setSynchronous("updateScore", 5000);
 
       dojo.subscribe(
@@ -369,6 +377,14 @@ define([
       }
 
       console.debug("Leaving updateScore");
+    },
+
+    updateDeckCount: function (notification) {
+      console.debug("Entering updateDeckCount");
+
+      $('deck_count').innerHTML = notification.args.deck_count;
+
+      console.debug("Leaving updateDeckCount");
     },
 
     currentPlayerCardsCountUpdate: function (notification) {

@@ -24,6 +24,7 @@ class Guibole extends Table
   const DISCARD = 'discard';
   const TMP_DISCARD = 'tmp_discard';
   const PLAYED_CARDS = 'played_cards';
+  const DECK_COUNT = 'deck_count';
 
   function __construct()
   {
@@ -117,6 +118,8 @@ class Guibole extends Table
     $result[self::DISCARD] = $this->getDiscardedCards();
     $result[self::PLAYED_CARDS] = $this->getPlayedCards();
 
+    $result[self::DECK_COUNT] = $this->cards->countCardsInLocation(self::DECK);
+
     $result['state_name'] = $this->gamestate->state()["name"];
 
     return $result;
@@ -138,6 +141,13 @@ class Guibole extends Table
       clienttranslate('The dealer draws a ${card_value} and discards it'),
       array(
         'card_value' => getCardHumanReadableValue($cards[0]),
+      )
+    );
+    $this->notifyAllPlayers(
+      'deckCountUpdate',
+      '',
+      array(
+        'deck_count' => $this->cards->countCardsInLocation(self::DECK),
       )
     );
 
@@ -420,15 +430,13 @@ class Guibole extends Table
     ));
   }
 
-  function getFirstCardInDeck()
+  function shuffleDeckIfNeeded()
   {
-    $card = $this->cards->getCardOnTop(self::DECK);
-
     /*
      * In case the deck is empty, move all discarded card except the last one
      * to the deck and shuffle it
      */
-    if (!$card) {
+    if (!$this->cards->countCardsInLocation(self::DECK)) {
       $last_discarded_card = $this->cards->getCardOnTop(self::TMP_DISCARD);
 
       $this->cards->moveAllCardsInLocation(self::TMP_DISCARD, self::DECK);
@@ -442,11 +450,7 @@ class Guibole extends Table
         clienttranslate('Shuffling discarded cards and refilling the deck'),
         array()
       );
-
-      return $this->getFirstCardInDeck();
     }
-
-    return $card;
   }
 
   function getCards($card_ids)
@@ -464,7 +468,7 @@ class Guibole extends Table
     $this->ensureCurrentPlayer();
 
     if (!$card_id) {
-      $card = $this->getFirstCardInDeck();
+      $card = $this->cards->getCardOnTop(self::DECK);
     } else {
       $card = $this->cards->getCard($card_id);
     }
@@ -483,6 +487,8 @@ class Guibole extends Table
     } else {
       $message = clienttranslate('${player_name} takes a card from the discard');
     }
+
+    $this->shuffleDeckIfNeeded();
 
     $this->notifyAllPlayers(
       'message',
@@ -503,6 +509,16 @@ class Guibole extends Table
       'from' => $card['location'],
       'to_player_id' => $current_player_id
     ));
+
+    if (!$card_id) {
+      $this->notifyAllPlayers(
+        'deckCountUpdate',
+        '',
+        array(
+          'deck_count' => $this->cards->countCardsInLocation(self::DECK),
+        )
+      );
+    }
   }
 
   function notifyPlayerAboutHisHand($player_id)

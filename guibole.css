@@ -16,6 +16,11 @@
   height: 107px !important;
 }
 
+#deck_count {
+  color: #06106a;
+  position: relative;
+}
+
 #discard {
   height: 107px !important;
 }

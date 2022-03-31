@@ -2,7 +2,9 @@
 
 <div id="table">
   <div id="card_mat">
-    <div id="deck"></div>
+    <div id="deck">
+      <div id="deck_count"></div>
+    </div>
     <div id="discard"></div>
     <div id="played_cards"></div>
   </div>
