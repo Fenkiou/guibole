@@ -1,0 +1,10 @@
+{
+  "table": {
+    "rounds_count": { "id": 11, "name": "Number of rounds", "type": "int" }
+  },
+  "player": {
+    "ended_round_count": { "id": 11, "name": "Number of ended round", "type": "int" },
+    "failed_round_count": { "id": 12, "name": "Number of failed round", "type": "int" },
+    "counter_count": { "id": 13, "name": "Number of counter", "type": "int" }
+  }
+}

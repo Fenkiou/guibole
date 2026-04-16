@@ -1,0 +1,10 @@
+{
+  "100": {
+    "name": "Game length",
+    "values": {
+      "1": { "name": "Quick game (100 points)" },
+      "2": { "name": "Standard game (500 points)" }
+    },
+    "default": 1
+  }
+}
